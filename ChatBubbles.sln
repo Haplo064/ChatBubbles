@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29613.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatBubbles", "ChatBubbles.csproj", "{54DABD23-C423-4A06-A956-373458B588BA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{54DABD23-C423-4A06-A956-373458B588BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54DABD23-C423-4A06-A956-373458B588BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54DABD23-C423-4A06-A956-373458B588BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54DABD23-C423-4A06-A956-373458B588BA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0BDACA76-7760-44D6-8C88-DC6C1E4DF42C}
+	EndGlobalSection
+EndGlobal
