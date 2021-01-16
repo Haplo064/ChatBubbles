@@ -163,6 +163,8 @@ namespace ChatBubbles
             this.pluginInterface.UiBuilder.OnBuildUi -= BubbleConfigUI;
             this.pluginInterface.UiBuilder.OnOpenConfigUi -= BubbleConfig;
             pluginInterface.CommandManager.RemoveHandler("/bub");
+            UpdateBubbleFuncHook.Disable();
+            OpenBubbleFuncHook.Disable();
         }
 
         //What to do when command is called
