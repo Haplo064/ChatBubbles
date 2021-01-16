@@ -106,19 +106,26 @@ namespace ChatBubbles
                 PluginLog.Log($"Timer={bubble->Timer}");
             }
             */
-            foreach(charData cd in charDatas)
+            var IdOffset = 116;
+            int actorID = Marshal.ReadInt32(actor + IdOffset);
+
+            foreach (charData cd in charDatas)
             {
-                if (actor == cd.actorPtr)
+                if (actorID == cd.actorID)
                 {
 
                         //if(debug) PluginLog.Log("Actor found");
                         if (bubble->Status == SeBubbleStatus.OFF)
                         {
-                            if (debug) PluginLog.Log("Switch On");
+                        if (debug)
+                        {
+                            PluginLog.Log("Switch On");
+
+                        }
                             bubble->Status = SeBubbleStatus.INIT;
                             bubble->Timer = timer;
                         }
-
+                    break;
                 }
             }
 
@@ -127,9 +134,12 @@ namespace ChatBubbles
 
         public unsafe IntPtr OpenBubbleFuncFunc(IntPtr self, IntPtr actor, string balloonText, bool notSure)
         {
+            var IdOffset = 116;
+            int actorID = Marshal.ReadInt32(actor + IdOffset);
+
             foreach (charData cd in charDatas)
             {
-                if (actor == cd.actorPtr)
+                if (actorID == cd.actorID)
                 {
                     if (debug)
                     {
@@ -140,6 +150,7 @@ namespace ChatBubbles
                     {
                         balloonText = cd.message;
                     }
+                    break;
                 }
             }
             //PluginLog.Log(balloonText);
@@ -180,6 +191,9 @@ namespace ChatBubbles
 
                 if (sender.TextValue != "")
                 {
+                    var messageParsed = Regex.Replace(message.TextValue, @"[^\u0020-\u007E]", string.Empty);
+                    var nameParsed = Regex.Replace(sender.TextValue, @"[^\u0020-\u007E]", string.Empty);
+
                     var x = sender.Payloads;
                     bool xServer = false;
                     string rawtext = "";
@@ -197,36 +211,68 @@ namespace ChatBubbles
                         }
                     }
 
-                    IntPtr actr;
+                    int actr;
                     if (xServer)
                     {
-                        actr = GetActorPtr(Regex.Replace(rawtext, @"[^\u0020-\u007E]", string.Empty));
+                        actr = GetActorID(Regex.Replace(rawtext, @"[^\u0020-\u007E]", string.Empty));
                     }
                     else
                     {
-                        actr = GetActorPtr(Regex.Replace(sender.TextValue, @"[^\u0020-\u007E]", string.Empty));
+                        actr = GetActorID(Regex.Replace(sender.TextValue, @"[^\u0020-\u007E]", string.Empty));
                     }
 
                     if (debug)
                     {
 
-                        //PluginLog.Log($"Type={ type.ToString()}");
-                        if (xServer) { PluginLog.Log($"Sender={ Regex.Replace(rawtext, @"[^\u0020-\u007E]", string.Empty)}"); }
+                        PluginLog.Log($"Type={ type.ToString()}");
+                        if (xServer) { PluginLog.Log($"xSender={ Regex.Replace(rawtext, @"[^\u0020-\u007E]", string.Empty)}"); }
                         PluginLog.Log($"Sender={ Regex.Replace(sender.TextValue, @"[^\u0020-\u007E]", string.Empty)}");
-                        PluginLog.Log($"Message={ Regex.Replace(message.TextValue, @"[^\u0020-\u007E]", string.Empty)}");
+                        PluginLog.Log($"Message Stripped={ Regex.Replace(message.TextValue, @"[^\u0020-\u007E]", string.Empty)}");
+                        PluginLog.Log($"Message Raw={ message.TextValue }");
                         PluginLog.Log($"ActorID={actr}");
                     }
-
-                    if (actr != IntPtr.Zero)
+                    //Strip actor from emotes, add *'s
+                    if(type == XivChatType.StandardEmote)
                     {
+                        if(actr == pluginInterface.ClientState.LocalPlayer.ActorId)
+                        {
+                            messageParsed = String.Join(" ", messageParsed.Split(' ').Skip(1));
+                        }
+                        else
+                        {
+                            messageParsed = String.Join(" ", messageParsed.Split(' ').Skip(2));
+                        }
+                        
+                        messageParsed = "*" + messageParsed.Substring(0, messageParsed.Length - 1) + "*";
+                    }
+
+                    //Adds *'s to custom emotes
+                    if (type == XivChatType.CustomEmote)
+                    {
+                        messageParsed = "*" + messageParsed + "*";
+                    }
+
+                    if(type == XivChatType.TellOutgoing)
+                    {
+                        actr = pluginInterface.ClientState.LocalPlayer.ActorId;
+                        nameParsed = pluginInterface.ClientState.LocalPlayer.Name;
+                    }
+
+
+                    if (actr != 0)
+                    {
+
                         bool update = false;
+                        
                         foreach (charData cd in charDatas)
                         {
-                            if (cd.actorPtr == actr)
+                            if (cd.actorID == actr)
                             {
+
                                 if (debug) PluginLog.Log("Update message");
-                                cd.message = message.TextValue;
-                                cd.DateTime = DateTime.Now;
+                                TimeSpan time = new TimeSpan(0,0,(int)(DateTime.Now - cd.DateTime).TotalSeconds);
+                                cd.message = messageParsed;
+                                cd.DateTime = DateTime.Now.Add(time);
                                 update = true;
                             }
                         }
@@ -236,10 +282,10 @@ namespace ChatBubbles
 
                             charDatas.Add(new charData
                             {
-                                actorPtr = actr,
+                                actorID = actr,
                                 DateTime = DateTime.Now,
-                                message = Regex.Replace(message.TextValue, @"[^\u0020-\u007E]", string.Empty),
-                                name = Regex.Replace(sender.TextValue, @"[^\u0020-\u007E]", string.Empty),
+                                message = messageParsed,
+                                name = nameParsed,
                             });
                         }
                     }
@@ -247,7 +293,7 @@ namespace ChatBubbles
             }
         }
 
-        public IntPtr GetActorPtr(string nameInput)
+        public int GetActorID(string nameInput)
         {
                 for (var k = 0; k < pluginInterface.ClientState.Actors.Length; k++)
                 {
@@ -255,12 +301,12 @@ namespace ChatBubbles
                     {
                         if (pc.Name == nameInput)
                         {
-                            return pc.Address;
+                            return pc.ActorId;
                         }
                     }
                 }
 
-            return IntPtr.Zero;
+            return 0;
         }
 
         //ConfigUI
@@ -271,7 +317,8 @@ namespace ChatBubbles
                 ImGui.Begin("Chat Bubbles Config", ref config);
                 ImGui.InputInt("Bubble Timer", ref timer);
                 ImGui.Checkbox("Debug Logging", ref debug);
-                ImGui.Text("NEXT TODO: Fix emotes");
+                ImGui.Text("Todo: Fix Incoming Tells");
+                ImGui.Text("Todo: Better message parsing for special characters");
                 int i = 0;
                 ImGui.Columns(2);
                 foreach (var e in (XivChatType[])Enum.GetValues(typeof(XivChatType)))
@@ -330,7 +377,7 @@ namespace ChatBubbles
         public class charData
         {
             public string message;
-            public IntPtr actorPtr;
+            public int actorID;
             public DateTime DateTime;
             public string name;
         }
