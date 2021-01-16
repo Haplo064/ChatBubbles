@@ -24,7 +24,7 @@ namespace ChatBubbles
     {
         public string Name => "Chat Bubbles";
         private DalamudPluginInterface pluginInterface;
-        public PluginConfiguration Configuration;
+        public Config Configuration;
         public bool enable = true;
         public List<charData> charDatas = new List<charData>();
         public int timer = 3;
@@ -32,7 +32,9 @@ namespace ChatBubbles
 #if DEBUG
         public bool config = true;
         public bool debug = true;
-        public bool xxx = true;
+#else
+        public bool config = false;
+        public bool debug = false;
 #endif
 
         public List<XivChatType> _channels = new List<XivChatType>();
@@ -63,7 +65,9 @@ namespace ChatBubbles
         public unsafe void Initialize(DalamudPluginInterface pluginInterface)
         {
             this.pluginInterface = pluginInterface;
-            Configuration = pluginInterface.GetPluginConfig() as PluginConfiguration ?? new PluginConfiguration();
+            Configuration = pluginInterface.GetPluginConfig() as Config ?? new Config();
+            timer = Configuration.Timer;
+            _channels = Configuration.Channels;
 
             this.pluginInterface.Framework.Gui.Chat.OnChatMessage += Chat_OnChatMessage;
             this.pluginInterface.UiBuilder.OnBuildUi += BubbleConfigUI;
@@ -79,7 +83,7 @@ namespace ChatBubbles
             {
                 UpdateBubbleFuncHook = new Hook<UpdateBubble>(UpdateBubblePtr + 0x9, UpdateBubbleFunc, this);
                 UpdateBubbleFuncHook.Enable();
-                PluginLog.Log("GOOD");
+                if (debug) { PluginLog.Log("GOOD"); }
             }
             catch (Exception e)
             { PluginLog.Log("BAD\n" + e.ToString()); }
@@ -90,22 +94,24 @@ namespace ChatBubbles
             {
                 OpenBubbleFuncHook = new Hook<OpenBubble> (OpenBubblePtr, OpenBubbleFunc, this);
                 OpenBubbleFuncHook.Enable();
-                PluginLog.Log("GOOD2");
+                if (debug)
+                {
+                    PluginLog.Log("GOOD2");
+                }
             }
             catch (Exception e)
             { PluginLog.Log("BAD\n" + e.ToString()); }
+
+        }
+        public void SaveConfig()
+        {
+            Configuration.Timer = timer;
+            Configuration.Channels = _channels;
+            this.pluginInterface.SavePluginConfig(Configuration);
         }
 
         public unsafe IntPtr UpdateBubbleFuncFunc(SeBubble* bubble, IntPtr actor, IntPtr dunnoA, IntPtr dunnoB)
         {
-            /*
-            if (bubble->Status == SeBubbleStatus.ON)
-            {
-                PluginLog.Log($"ID={bubble->Id}");
-                PluginLog.Log($"Status={bubble->Status}");
-                PluginLog.Log($"Timer={bubble->Timer}");
-            }
-            */
             var IdOffset = 116;
             int actorID = Marshal.ReadInt32(actor + IdOffset);
 
@@ -113,8 +119,6 @@ namespace ChatBubbles
             {
                 if (actorID == cd.actorID)
                 {
-
-                        //if(debug) PluginLog.Log("Actor found");
                         if (bubble->Status == SeBubbleStatus.OFF)
                         {
                         if (debug)
@@ -153,7 +157,6 @@ namespace ChatBubbles
                     break;
                 }
             }
-            //PluginLog.Log(balloonText);
             return OpenBubbleFuncHook.Original(self, actor, balloonText, notSure);
         }
 
@@ -263,27 +266,42 @@ namespace ChatBubbles
                     {
 
                         bool update = false;
-                        
+                        TimeSpan time = new TimeSpan(0, 0, 0);
+                        int add = 0;
+
                         foreach (charData cd in charDatas)
                         {
                             if (cd.actorID == actr)
                             {
 
-                                if (debug) PluginLog.Log("Update message");
-                                TimeSpan time = new TimeSpan(0,0,(int)(DateTime.Now - cd.DateTime).TotalSeconds);
-                                cd.message = messageParsed;
-                                cd.DateTime = DateTime.Now.Add(time);
+                                if (debug) PluginLog.Log("Priors found");
+                                add += timer;
                                 update = true;
                             }
                         }
+
+                        if (debug) PluginLog.Log("Adding new one");
                         if (!update)
                         {
-                            if (debug) PluginLog.Log("Adding new one");
-
                             charDatas.Add(new charData
                             {
                                 actorID = actr,
                                 DateTime = DateTime.Now,
+                                message = messageParsed,
+                                name = nameParsed,
+                            });
+                        }
+                        else
+                        {
+                            if (debug)
+                            {
+                                PluginLog.Log(DateTime.Now.Add(time).ToString());
+                            }
+                            time = new TimeSpan(0, 0, add);
+                            charDatas.Add(new charData
+                            {
+                                actorID = actr,
+                                DateTime = DateTime.Now.Add(time),
                                 message = messageParsed,
                                 name = nameParsed,
                             });
@@ -316,10 +334,15 @@ namespace ChatBubbles
             {
                 ImGui.Begin("Chat Bubbles Config", ref config);
                 ImGui.InputInt("Bubble Timer", ref timer);
+                ImGui.SameLine();
+                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("How long the bubble will last on screen."); }
                 ImGui.Checkbox("Debug Logging", ref debug);
-                ImGui.Text("Todo: Fix Incoming Tells");
-                ImGui.Text("Todo: Better message parsing for special characters");
+                ImGui.SameLine();
+                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Enable logging for debug purposes.\nOnly enable if you are going to share the `dalamud.txt` file in discord."); }
                 int i = 0;
+                ImGui.Text("Enabled channels:");
+                ImGui.SameLine();
+                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Which chat channels to show bubbles for."); }
                 ImGui.Columns(2);
                 foreach (var e in (XivChatType[])Enum.GetValues(typeof(XivChatType)))
                 {
@@ -341,12 +364,19 @@ namespace ChatBubbles
                     i++;
                 }
                 ImGui.Columns(1);
+
+                if (ImGui.Button("Save and Close Config"))
+                {
+                    SaveConfig();
+                    config = false;
+                }
+
                 ImGui.End();
             }
 
             for(int i = 0; i < charDatas.Count; i++)
             {
-                if ((DateTime.Now - charDatas[i].DateTime).TotalSeconds > timer)
+                if ((DateTime.Now - charDatas[i].DateTime).TotalSeconds > (double)timer - (0.5*(double)timer))
                 {
                     //if (debug) PluginLog.Log("Removing");
                     charDatas.RemoveAt(i);
@@ -382,5 +412,13 @@ namespace ChatBubbles
             public string name;
         }
 
+        public class Config : IPluginConfiguration
+        {
+            public int Version { get; set; } = 0;
+            public List<XivChatType> Channels { get; set; } = new List<XivChatType>();
+            public int Timer { get; set; } = 7;
+
+
+        }
     }
 }
