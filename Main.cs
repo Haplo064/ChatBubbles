@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using Dalamud.Game.Chat;
 using Dalamud.Game.Chat.SeStringHandling;
@@ -9,13 +7,8 @@ using Dalamud.Plugin;
 using Dalamud.Game.Command;
 using Dalamud.Hooking;
 using ImGuiNET;
-using System.IO;
-using System.Runtime.CompilerServices;
 using Dalamud.Configuration;
-using Num = System.Numerics;
 using System.Runtime.InteropServices;
-using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace ChatBubbles
@@ -124,7 +117,6 @@ namespace ChatBubbles
                         if (debug)
                         {
                             PluginLog.Log("Switch On");
-
                         }
                             bubble->Status = SeBubbleStatus.INIT;
                             bubble->Timer = timer;
@@ -411,14 +403,11 @@ namespace ChatBubbles
             public DateTime DateTime;
             public string name;
         }
-
-        public class Config : IPluginConfiguration
-        {
-            public int Version { get; set; } = 0;
-            public List<XivChatType> Channels { get; set; } = new List<XivChatType>();
-            public int Timer { get; set; } = 7;
-
-
-        }
+    }
+    public class Config : IPluginConfiguration
+    {
+        public int Version { get; set; } = 0;
+        public List<XivChatType> Channels { get; set; } = new List<XivChatType>();
+        public int Timer { get; set; } = 7;
     }
 }
