@@ -10,6 +10,7 @@ using ImGuiNET;
 using Dalamud.Configuration;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using Dalamud.Game.Chat.SeStringHandling.Payloads;
 
 namespace ChatBubbles
 {
@@ -49,7 +50,7 @@ namespace ChatBubbles
         public IntPtr UpdateBubblePtr;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, CharSet = CharSet.Ansi)]
-        public delegate IntPtr OpenBubble(IntPtr self, IntPtr actor, string balloonText, bool notSure);
+        public delegate IntPtr OpenBubble(IntPtr self, IntPtr actor, IntPtr textPtr, bool notSure);
         private OpenBubble OpenBubbleFunc;
         private Hook<OpenBubble> OpenBubbleFuncHook;
         public IntPtr OpenBubblePtr;
@@ -128,10 +129,11 @@ namespace ChatBubbles
             return UpdateBubbleFuncHook.Original(bubble, actor, dunnoA, dunnoB);
         }
 
-        public unsafe IntPtr OpenBubbleFuncFunc(IntPtr self, IntPtr actor, string balloonText, bool notSure)
+        public unsafe IntPtr OpenBubbleFuncFunc(IntPtr self, IntPtr actor, IntPtr textPtr, bool notSure)
         {
             var IdOffset = 116;
             int actorID = Marshal.ReadInt32(actor + IdOffset);
+            IntPtr newPointer = textPtr;
 
             foreach (charData cd in charDatas)
             {
@@ -140,16 +142,36 @@ namespace ChatBubbles
                     if (debug)
                     {
                         PluginLog.Log("Update ballon text");
-                        PluginLog.Log(cd.message);
+                        PluginLog.Log(cd.message.TextValue);
                     }
-                    if (cd.message.Length > 0)
+                    if (cd.message.TextValue.Length > 0)
                     {
-                        balloonText = cd.message;
+                        var bytes = cd.message.Encode();
+                        newPointer = Marshal.AllocHGlobal(bytes.Length + 1);
+                        Marshal.Copy(bytes, 0, newPointer, bytes.Length);
+                        Marshal.WriteByte(newPointer, bytes.Length, 0);
+                        textPtr = newPointer;
                     }
                     break;
                 }
             }
-            return OpenBubbleFuncHook.Original(self, actor, balloonText, notSure);
+            return OpenBubbleFuncHook.Original(self, actor, textPtr, notSure);
+        }
+        public unsafe SeString GetSeStringFromPtr(byte* ptr)
+        {
+            var offset = 0;
+            while (true)
+            {
+                var b = *(ptr + offset);
+                if (b == 0)
+                {
+                    break;
+                }
+                offset += 1;
+            }
+            var bytes = new byte[offset];
+            Marshal.Copy(new IntPtr(ptr), bytes, 0, offset);
+            return pluginInterface.SeStringManager.Parse(bytes);
         }
 
         public class PluginConfiguration : IPluginConfiguration
@@ -180,128 +202,103 @@ namespace ChatBubbles
         }
 
         //What to do with chat messages
-        private void Chat_OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+        private void Chat_OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString cmessage, ref bool isHandled)
         {
 
             if (_channels.Contains(type))
             {
+                SeString fmessage = new SeString(new List<Payload>());
+                fmessage.Append(cmessage);
 
-                if (sender.TextValue != "")
+                string PName = "";
+                if (sender.Payloads.Count == 1)
                 {
-                    var messageParsed = Regex.Replace(message.TextValue, @"[^\u0020-\u007E]", string.Empty);
-                    var nameParsed = Regex.Replace(sender.TextValue, @"[^\u0020-\u007E]", string.Empty);
-
-                    var x = sender.Payloads;
-                    bool xServer = false;
-                    string rawtext = "";
-                    if (x.Count > 1)
+                    PName = pluginInterface.ClientState.LocalPlayer.Name;
+                }
+                else
+                {
+                    foreach (Payload payload in sender.Payloads)
                     {
-                        rawtext = x[1].ToString().Substring(16);
-                        xServer = true;
-                    }
-
-                    if (debug)
-                    {
-                        foreach (var xx in x)
+                        if (payload.Type == PayloadType.Player)
                         {
-                            PluginLog.Log(xx.Type.ToString());
-                        }
-                    }
-
-                    int actr;
-                    if (xServer)
-                    {
-                        actr = GetActorID(Regex.Replace(rawtext, @"[^\u0020-\u007E]", string.Empty));
-                    }
-                    else
-                    {
-                        actr = GetActorID(Regex.Replace(sender.TextValue, @"[^\u0020-\u007E]", string.Empty));
-                    }
-
-                    if (debug)
-                    {
-
-                        PluginLog.Log($"Type={ type.ToString()}");
-                        if (xServer) { PluginLog.Log($"xSender={ Regex.Replace(rawtext, @"[^\u0020-\u007E]", string.Empty)}"); }
-                        PluginLog.Log($"Sender={ Regex.Replace(sender.TextValue, @"[^\u0020-\u007E]", string.Empty)}");
-                        PluginLog.Log($"Message Stripped={ Regex.Replace(message.TextValue, @"[^\u0020-\u007E]", string.Empty)}");
-                        PluginLog.Log($"Message Raw={ message.TextValue }");
-                        PluginLog.Log($"ActorID={actr}");
-                    }
-                    //Strip actor from emotes, add *'s
-                    if(type == XivChatType.StandardEmote)
-                    {
-                        if(actr == pluginInterface.ClientState.LocalPlayer.ActorId)
-                        {
-                            messageParsed = String.Join(" ", messageParsed.Split(' ').Skip(1));
-                        }
-                        else
-                        {
-                            messageParsed = String.Join(" ", messageParsed.Split(' ').Skip(2));
-                        }
-                        
-                        messageParsed = "*" + messageParsed.Substring(0, messageParsed.Length - 1) + "*";
-                    }
-
-                    //Adds *'s to custom emotes
-                    if (type == XivChatType.CustomEmote)
-                    {
-                        messageParsed = "*" + messageParsed + "*";
-                    }
-
-                    if(type == XivChatType.TellOutgoing)
-                    {
-                        actr = pluginInterface.ClientState.LocalPlayer.ActorId;
-                        nameParsed = pluginInterface.ClientState.LocalPlayer.Name;
-                    }
-
-
-                    if (actr != 0)
-                    {
-
-                        bool update = false;
-                        TimeSpan time = new TimeSpan(0, 0, 0);
-                        int add = 0;
-
-                        foreach (charData cd in charDatas)
-                        {
-                            if (cd.actorID == actr)
-                            {
-
-                                if (debug) PluginLog.Log("Priors found");
-                                add += timer;
-                                update = true;
-                            }
-                        }
-
-                        if (debug) PluginLog.Log("Adding new one");
-                        if (!update)
-                        {
-                            charDatas.Add(new charData
-                            {
-                                actorID = actr,
-                                DateTime = DateTime.Now,
-                                message = messageParsed,
-                                name = nameParsed,
-                            });
-                        }
-                        else
-                        {
-                            if (debug)
-                            {
-                                PluginLog.Log(DateTime.Now.Add(time).ToString());
-                            }
-                            time = new TimeSpan(0, 0, add);
-                            charDatas.Add(new charData
-                            {
-                                actorID = actr,
-                                DateTime = DateTime.Now.Add(time),
-                                message = messageParsed,
-                                name = nameParsed,
-                            });
+                            PlayerPayload pPayload = (PlayerPayload)payload;
+                            PName = pPayload.PlayerName;
                         }
                     }
                 }
+     
+                if(type == XivChatType.StandardEmote || type == XivChatType.CustomEmote)
+                {
+                    if (cmessage.Payloads[0].Type == PayloadType.Player)
+                    {
+                        PlayerPayload pPayload = (PlayerPayload)cmessage.Payloads[0];
+                        PName = pPayload.PlayerName;
+                    }
+                    fmessage.Payloads.Insert(0, new EmphasisItalicPayload(true));
+                    fmessage.Payloads.Add(new EmphasisItalicPayload(false));
+                }
+
+                int actr = GetActorID(PName);
+
+                if (debug)
+                {
+                    PluginLog.Log($"Type={ type.ToString()}");
+                    PluginLog.Log($"Sender={ PName }");
+                    PluginLog.Log($"Message Raw={ cmessage.TextValue }");
+                    PluginLog.Log($"ActorID={actr}");
+                }
+
+                if (type == XivChatType.TellOutgoing)
+                {
+                    actr = pluginInterface.ClientState.LocalPlayer.ActorId;
+                    PName = pluginInterface.ClientState.LocalPlayer.Name;
+                }
+
+                if (actr != 0)
+                {
+                    bool update = false;
+                    TimeSpan time = new TimeSpan(0, 0, 0);
+                    int add = 0;
+
+                    foreach (charData cd in charDatas)
+                    {
+                        if (cd.actorID == actr)
+                        {
+                            if (debug) PluginLog.Log("Priors found");
+                            add += timer;
+                            update = true;
+                        }
+                    }
+
+                    if (debug) PluginLog.Log("Adding new one");
+                    if (!update)
+                    {
+                        charDatas.Add(new charData
+                        {
+                            actorID = actr,
+                            DateTime = DateTime.Now,
+                            message = fmessage,
+                            name = PName,
+                        });
+                    }
+                    else
+                    {
+                        if (debug)
+                        {
+                            PluginLog.Log(DateTime.Now.Add(time).ToString());
+                        }
+                    
+                        time = new TimeSpan(0, 0, add);
+                        charDatas.Add(new charData
+                        {
+                            actorID = actr,
+                            DateTime = DateTime.Now.Add(time),
+                            message = fmessage,
+                            name = PName,
+                        });
+                    }
+                }
+                
             }
         }
 
@@ -400,7 +397,7 @@ namespace ChatBubbles
 
         public class charData
         {
-            public string message;
+            public SeString message;
             public int actorID;
             public DateTime DateTime;
             public string name;
