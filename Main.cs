@@ -23,9 +23,8 @@ namespace ChatBubbles
         public bool picker = false;
         public List<charData> charDatas = new List<charData>();
         public int timer = 3;
-        public UIColorPick c = new UIColorPick { choice = 0 };
-        public UIColorPick d = new UIColorPick { choice = 0 };
         public UIColorPick chooser;
+        public int queue;
 
 
 #if DEBUG
@@ -87,6 +86,7 @@ namespace ChatBubbles
             timer = Configuration.Timer;
             _channels = Configuration.Channels;
             textColour = Configuration.TextColour;
+            queue = Configuration.Queue;
 
             this.pluginInterface.Framework.Gui.Chat.OnChatMessage += Chat_OnChatMessage;
             this.pluginInterface.UiBuilder.OnBuildUi += BubbleConfigUI;
@@ -129,6 +129,7 @@ namespace ChatBubbles
             Configuration.Timer = timer;
             Configuration.Channels = _channels;
             Configuration.TextColour = textColour;
+            Configuration.Queue = queue;
             this.pluginInterface.SavePluginConfig(Configuration);
         }
 
@@ -288,7 +289,7 @@ namespace ChatBubbles
 
                 if (actr != 0)
                 {
-                    bool update = false;
+                    int update = 0;
                     TimeSpan time = new TimeSpan(0, 0, 0);
                     int add = 0;
 
@@ -298,12 +299,12 @@ namespace ChatBubbles
                         {
                             if (debug) PluginLog.Log("Priors found");
                             add += timer;
-                            update = true;
+                            update++;
                         }
                     }
 
                     if (debug) PluginLog.Log("Adding new one");
-                    if (!update)
+                    if (update == 0)
                     {
                         charDatas.Add(new charData
                         {
@@ -319,15 +320,18 @@ namespace ChatBubbles
                         {
                             PluginLog.Log(DateTime.Now.Add(time).ToString());
                         }
-                    
-                        time = new TimeSpan(0, 0, add);
-                        charDatas.Add(new charData
+
+                        if (update < queue)
                         {
-                            actorID = actr,
-                            DateTime = DateTime.Now.Add(time),
-                            message = fmessage,
-                            name = PName,
-                        });
+                            time = new TimeSpan(0, 0, add);
+                            charDatas.Add(new charData
+                            {
+                                actorID = actr,
+                                DateTime = DateTime.Now.Add(time),
+                                message = fmessage,
+                                name = PName,
+                            });
+                        }
                     }
                 }
                 
@@ -359,6 +363,9 @@ namespace ChatBubbles
                 ImGui.InputInt("Bubble Timer", ref timer);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("How long the bubble will last on screen."); }
+                ImGui.InputInt("Maximum Bubble Queue", ref queue);
+                ImGui.SameLine();
+                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("How many bubbles can be queued to be seen per person."); }
                 ImGui.Checkbox("Debug Logging", ref debug);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Enable logging for debug purposes.\nOnly enable if you are going to share the `dalamud.txt` file in discord."); }
@@ -434,7 +441,7 @@ namespace ChatBubbles
 
             for (int i = 0; i < charDatas.Count; i++)
             {
-                if ((DateTime.Now - charDatas[i].DateTime).TotalSeconds > (double)timer - (0.5*(double)timer))
+                if ((DateTime.Now - charDatas[i].DateTime).TotalSeconds > (double)timer - (0.5 * (double)timer))
                 {
                     //if (debug) PluginLog.Log("Removing");
                     charDatas.RemoveAt(i);
@@ -500,5 +507,6 @@ namespace ChatBubbles
             new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
             new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }
         };
+        public int Queue { get; set; } = 3;
     }
 }
