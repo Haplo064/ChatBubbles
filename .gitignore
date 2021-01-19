@@ -76,3 +76,12 @@ obj/Release/ChatBubbles.csprojAssemblyReference.cache
 obj/Release/ChatBubbles.dll
 obj/Release/ChatBubbles.pdb
 obj/Release/DesignTimeResolveAssemblyReferencesInput.cache
+bin/Debug/IndexRange.dll
+bin/Debug/System.ComponentModel.Annotations.dll
+bin/Release/IndexRange.dll
+bin/Release/System.ComponentModel.Annotations.dll
+obj/ChatBubbles.csproj.nuget.cache
+obj/ChatBubbles.csproj.nuget.dgspec.json
+obj/ChatBubbles.csproj.nuget.g.props
+obj/ChatBubbles.csproj.nuget.g.targets
+obj/project.assets.json

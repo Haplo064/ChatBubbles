@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using Dalamud.Game.Chat;
 using Dalamud.Game.Chat.SeStringHandling;
@@ -9,8 +8,9 @@ using Dalamud.Hooking;
 using ImGuiNET;
 using Dalamud.Configuration;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using Dalamud.Game.Chat.SeStringHandling.Payloads;
+using Lumina.Excel.GeneratedSheets;
+using Num = System.Numerics;
 
 namespace ChatBubbles
 {
@@ -20,8 +20,13 @@ namespace ChatBubbles
         private DalamudPluginInterface pluginInterface;
         public Config Configuration;
         public bool enable = true;
+        public bool picker = false;
         public List<charData> charDatas = new List<charData>();
         public int timer = 3;
+        public UIColorPick c = new UIColorPick { choice = 0 };
+        public UIColorPick d = new UIColorPick { choice = 0 };
+        public UIColorPick chooser;
+
 
 #if DEBUG
         public bool config = true;
@@ -30,8 +35,22 @@ namespace ChatBubbles
         public bool config = false;
         public bool debug = false;
 #endif
+        
 
         public List<XivChatType> _channels = new List<XivChatType>();
+
+        public List<XivChatType> order = new List<XivChatType>
+        {
+            XivChatType.None, XivChatType.None, XivChatType.None, XivChatType.None, XivChatType.Say,
+            XivChatType.Shout, XivChatType.TellOutgoing, XivChatType.TellIncoming, XivChatType.Party, XivChatType.Alliance,
+            XivChatType.Ls1, XivChatType.Ls2, XivChatType.Ls3, XivChatType.Ls4, XivChatType.Ls5,
+            XivChatType.Ls6, XivChatType.Ls7, XivChatType.Ls8, XivChatType.FreeCompany, XivChatType.NoviceNetwork,
+            XivChatType.CustomEmote, XivChatType.StandardEmote, XivChatType.Yell, XivChatType.CrossParty, XivChatType.PvPTeam,
+            XivChatType.CrossLinkShell1, XivChatType.None, XivChatType.None, XivChatType.None, XivChatType.None,
+            XivChatType.None, XivChatType.None, XivChatType.CrossLinkShell2, XivChatType.CrossLinkShell3, XivChatType.CrossLinkShell4,
+            XivChatType.CrossLinkShell5, XivChatType.CrossLinkShell6, XivChatType.CrossLinkShell7, XivChatType.CrossLinkShell8
+        };
+
         public bool[] yesno = {
             false, false, false, false, true,
             true, true, true, true, true,
@@ -42,6 +61,8 @@ namespace ChatBubbles
             false, false, true, true, true,
             true, true, true, true
         };
+
+        public UIColorPick[] textColour;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, CharSet = CharSet.Ansi)]
         public unsafe delegate IntPtr UpdateBubble(SeBubble* bubble, IntPtr actor, IntPtr dunnoA, IntPtr dunnoB);
@@ -56,12 +77,16 @@ namespace ChatBubbles
         public IntPtr OpenBubblePtr;
 
 
+        public Lumina.Excel.ExcelSheet<UIColor> uiColours;
         public unsafe void Initialize(DalamudPluginInterface pluginInterface)
         {
+
             this.pluginInterface = pluginInterface;
+            uiColours = pluginInterface.Data.Excel.GetSheet<UIColor>();
             Configuration = pluginInterface.GetPluginConfig() as Config ?? new Config();
             timer = Configuration.Timer;
             _channels = Configuration.Channels;
+            textColour = Configuration.TextColour;
 
             this.pluginInterface.Framework.Gui.Chat.OnChatMessage += Chat_OnChatMessage;
             this.pluginInterface.UiBuilder.OnBuildUi += BubbleConfigUI;
@@ -96,11 +121,14 @@ namespace ChatBubbles
             catch (Exception e)
             { PluginLog.Log("BAD\n" + e.ToString()); }
 
+
+
         }
         public void SaveConfig()
         {
             Configuration.Timer = timer;
             Configuration.Channels = _channels;
+            Configuration.TextColour = textColour;
             this.pluginInterface.SavePluginConfig(Configuration);
         }
 
@@ -207,6 +235,7 @@ namespace ChatBubbles
 
             if (_channels.Contains(type))
             {
+
                 SeString fmessage = new SeString(new List<Payload>());
                 fmessage.Append(cmessage);
 
@@ -253,6 +282,9 @@ namespace ChatBubbles
                     actr = pluginInterface.ClientState.LocalPlayer.ActorId;
                     PName = pluginInterface.ClientState.LocalPlayer.Name;
                 }
+
+                fmessage.Payloads.Insert(0, new UIForegroundPayload(pluginInterface.Data, (ushort)textColour[order.IndexOf(type)].option));
+                fmessage.Payloads.Add(new UIForegroundPayload(pluginInterface.Data, 0));
 
                 if (actr != 0)
                 {
@@ -337,21 +369,34 @@ namespace ChatBubbles
                 ImGui.Columns(2);
                 foreach (var e in (XivChatType[])Enum.GetValues(typeof(XivChatType)))
                 {
-                    if (yesno[i]) {
-                    var enabled = _channels.Contains(e);
-                    if (ImGui.Checkbox($"{e}", ref enabled))
+                    if (yesno[i])
                     {
-                        if (enabled)
+                        var txtclr = BitConverter.GetBytes(textColour[i].choice);
+                        if (ImGui.ColorButton($"Text Colour##{i}", new Num.Vector4(
+                            (float)txtclr[3] / 255,
+                            (float)txtclr[2] / 255,
+                            (float)txtclr[1] / 255,
+                            (float)txtclr[0] / 255)))
                         {
-                            _channels.Add(e);
+                            chooser = textColour[i];
+                            picker = true;
                         }
-                        else
+                        ImGui.SameLine();
+
+                        var enabled = _channels.Contains(e);
+                        if (ImGui.Checkbox($"{e}", ref enabled))
                         {
-                            _channels.Remove(e);
+                            if (enabled)
+                            {
+                                _channels.Add(e);
+                            }
+                            else
+                            {
+                                _channels.Remove(e);
+                            }
                         }
-                        }
+                        ImGui.NextColumn();
                     }
-                    ImGui.NextColumn();
                     i++;
                 }
                 ImGui.Columns(1);
@@ -361,11 +406,33 @@ namespace ChatBubbles
                     SaveConfig();
                     config = false;
                 }
-
                 ImGui.End();
             }
 
-            for(int i = 0; i < charDatas.Count; i++)
+            if (picker)
+            {
+                ImGui.Begin("UIColor Picker", ref picker);
+                ImGui.Columns(10);
+                foreach(var z in uiColours)
+                {
+                    var temp = BitConverter.GetBytes(z.UIForeground);
+                    if (ImGui.ColorButton(z.RowId.ToString(), new Num.Vector4(
+                        (float)temp[3] / 255,
+                        (float)temp[2] / 255,
+                        (float)temp[1] / 255,
+                        (float)temp[0] / 255)))
+                    {
+                        chooser.choice = z.UIForeground;
+                        chooser.option = z.RowId;
+                        picker = false;
+                    }
+                    ImGui.NextColumn();
+                }
+                ImGui.Columns(1);
+                ImGui.End();
+            }
+
+            for (int i = 0; i < charDatas.Count; i++)
             {
                 if ((DateTime.Now - charDatas[i].DateTime).TotalSeconds > (double)timer - (0.5*(double)timer))
                 {
@@ -395,6 +462,8 @@ namespace ChatBubbles
             // Pretty sure there's more shit but I don't think it's relevant
         };
 
+
+
         public class charData
         {
             public SeString message;
@@ -403,10 +472,33 @@ namespace ChatBubbles
             public string name;
         }
     }
+
+    public class UIColorPick
+    {
+        public uint choice { get; set; }
+        public uint option { get; set; }
+    }
+
     public class Config : IPluginConfiguration
     {
         public int Version { get; set; } = 0;
         public List<XivChatType> Channels { get; set; } = new List<XivChatType>();
         public int Timer { get; set; } = 7;
+        public UIColorPick[] TextColour { get; set; } = 
+        {
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
+            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }
+        };
     }
 }
