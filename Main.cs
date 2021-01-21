@@ -17,15 +17,14 @@ namespace ChatBubbles
     public class ChatBubbles : IDalamudPlugin
     {
         public string Name => "Chat Bubbles";
-        private DalamudPluginInterface pluginInterface;
+        DalamudPluginInterface pluginInterface;
         public Config Configuration;
         public bool enable = true;
-        public bool picker = false;
+        public bool picker;
         public List<charData> charDatas = new List<charData>();
         public int timer = 3;
         public UIColorPick chooser;
         public int queue;
-
 
 #if DEBUG
         public bool config = true;
@@ -34,7 +33,6 @@ namespace ChatBubbles
         public bool config = false;
         public bool debug = false;
 #endif
-        
 
         public List<XivChatType> _channels = new List<XivChatType>();
 
@@ -65,21 +63,19 @@ namespace ChatBubbles
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, CharSet = CharSet.Ansi)]
         public unsafe delegate IntPtr UpdateBubble(SeBubble* bubble, IntPtr actor, IntPtr dunnoA, IntPtr dunnoB);
-        private UpdateBubble UpdateBubbleFunc;
-        private Hook<UpdateBubble> UpdateBubbleFuncHook;
+        UpdateBubble UpdateBubbleFunc;
+        Hook<UpdateBubble> UpdateBubbleFuncHook;
         public IntPtr UpdateBubblePtr;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, CharSet = CharSet.Ansi)]
         public delegate IntPtr OpenBubble(IntPtr self, IntPtr actor, IntPtr textPtr, bool notSure);
-        private OpenBubble OpenBubbleFunc;
-        private Hook<OpenBubble> OpenBubbleFuncHook;
+        OpenBubble OpenBubbleFunc;
+        Hook<OpenBubble> OpenBubbleFuncHook;
         public IntPtr OpenBubblePtr;
-
 
         public Lumina.Excel.ExcelSheet<UIColor> uiColours;
         public unsafe void Initialize(DalamudPluginInterface pluginInterface)
         {
-
             this.pluginInterface = pluginInterface;
             uiColours = pluginInterface.Data.Excel.GetSheet<UIColor>();
             Configuration = pluginInterface.GetPluginConfig() as Config ?? new Config();
@@ -96,13 +92,13 @@ namespace ChatBubbles
                 HelpMessage = "Opens the Chat Bubble config menu"
             });
 
-            UpdateBubblePtr = pluginInterface.TargetModuleScanner.ScanText("48 85 D2 0F 84 ?? ?? ?? ?? 48 89 5C 24 ?? 57 48 83 EC 20 8B 41 0C"); 
+            UpdateBubblePtr = pluginInterface.TargetModuleScanner.ScanText("48 85 D2 0F 84 ?? ?? ?? ?? 48 89 5C 24 ?? 57 48 83 EC 20 8B 41 0C");
             UpdateBubbleFunc = new UpdateBubble(UpdateBubbleFuncFunc);
             try
             {
                 UpdateBubbleFuncHook = new Hook<UpdateBubble>(UpdateBubblePtr + 0x9, UpdateBubbleFunc, this);
                 UpdateBubbleFuncHook.Enable();
-                if (debug) { PluginLog.Log("GOOD"); }
+                if (debug) PluginLog.Log("GOOD");
             }
             catch (Exception e)
             { PluginLog.Log("BAD\n" + e.ToString()); }
@@ -111,26 +107,21 @@ namespace ChatBubbles
             OpenBubbleFunc = new OpenBubble(OpenBubbleFuncFunc);
             try
             {
-                OpenBubbleFuncHook = new Hook<OpenBubble> (OpenBubblePtr, OpenBubbleFunc, this);
+                OpenBubbleFuncHook = new Hook<OpenBubble>(OpenBubblePtr, OpenBubbleFunc, this);
                 OpenBubbleFuncHook.Enable();
-                if (debug)
-                {
-                    PluginLog.Log("GOOD2");
-                }
+                if (debug) PluginLog.Log("GOOD2");
             }
             catch (Exception e)
             { PluginLog.Log("BAD\n" + e.ToString()); }
-
-
-
         }
+
         public void SaveConfig()
         {
             Configuration.Timer = timer;
             Configuration.Channels = _channels;
             Configuration.TextColour = textColour;
             Configuration.Queue = queue;
-            this.pluginInterface.SavePluginConfig(Configuration);
+            pluginInterface.SavePluginConfig(Configuration);
         }
 
         public unsafe IntPtr UpdateBubbleFuncFunc(SeBubble* bubble, IntPtr actor, IntPtr dunnoA, IntPtr dunnoB)
@@ -142,15 +133,13 @@ namespace ChatBubbles
             {
                 if (actorID == cd.actorID)
                 {
-                        if (bubble->Status == SeBubbleStatus.OFF)
-                        {
-                        if (debug)
-                        {
-                            PluginLog.Log("Switch On");
-                        }
-                            bubble->Status = SeBubbleStatus.INIT;
-                            bubble->Timer = timer;
-                        }
+                    if (bubble->Status == SeBubbleStatus.OFF)
+                    {
+                        if (debug) PluginLog.Log("Switch On");
+                        bubble->Status = SeBubbleStatus.INIT;
+                        bubble->Timer = timer;
+                    }
+
                     break;
                 }
             }
@@ -161,7 +150,7 @@ namespace ChatBubbles
         public unsafe IntPtr OpenBubbleFuncFunc(IntPtr self, IntPtr actor, IntPtr textPtr, bool notSure)
         {
             var IdOffset = 116;
-            int actorID = Marshal.ReadInt32(actor + IdOffset);
+            int actorID = Marshal.ReadInt32(actor, IdOffset);
             IntPtr newPointer = textPtr;
 
             foreach (charData cd in charDatas)
@@ -173,31 +162,35 @@ namespace ChatBubbles
                         PluginLog.Log("Update ballon text");
                         PluginLog.Log(cd.message.TextValue);
                     }
+
                     if (cd.message.TextValue.Length > 0)
                     {
                         var bytes = cd.message.Encode();
                         newPointer = Marshal.AllocHGlobal(bytes.Length + 1);
                         Marshal.Copy(bytes, 0, newPointer, bytes.Length);
                         Marshal.WriteByte(newPointer, bytes.Length, 0);
+                        // TODO: Maybe write to game here?
+                        // Marshal.WriteByte(textPtr, bytes.Length, 0);
                         textPtr = newPointer;
                     }
+
                     break;
                 }
             }
+
             return OpenBubbleFuncHook.Original(self, actor, textPtr, notSure);
         }
+
         public unsafe SeString GetSeStringFromPtr(byte* ptr)
         {
             var offset = 0;
             while (true)
             {
                 var b = *(ptr + offset);
-                if (b == 0)
-                {
-                    break;
-                }
+                if (b == 0) break;
                 offset += 1;
             }
+
             var bytes = new byte[offset];
             Marshal.Copy(new IntPtr(ptr), bytes, 0, offset);
             return pluginInterface.SeStringManager.Parse(bytes);
@@ -210,37 +203,29 @@ namespace ChatBubbles
 
         public void Dispose()
         {
-            this.pluginInterface.Framework.Gui.Chat.OnChatMessage -= Chat_OnChatMessage;
-            this.pluginInterface.UiBuilder.OnBuildUi -= BubbleConfigUI;
-            this.pluginInterface.UiBuilder.OnOpenConfigUi -= BubbleConfig;
+            pluginInterface.Framework.Gui.Chat.OnChatMessage -= Chat_OnChatMessage;
+            pluginInterface.UiBuilder.OnBuildUi -= BubbleConfigUI;
+            pluginInterface.UiBuilder.OnOpenConfigUi -= BubbleConfig;
             pluginInterface.CommandManager.RemoveHandler("/bub");
             UpdateBubbleFuncHook.Disable();
             OpenBubbleFuncHook.Disable();
         }
 
-        //What to do when command is called
-        private void Command(string command, string arguments)
-        {
-            config = true;
-        }
+        // What to do when command is called
+        void Command(string command, string arguments) => config = true;
 
-        //What to do when plugin install config button is pressed
-        private void BubbleConfig(object Sender, EventArgs args)
-        {
-            config = true;
-        }
+        // What to do when plugin install config button is pressed
+        void BubbleConfig(object Sender, EventArgs args) => config = true;
 
-        //What to do with chat messages
-        private void Chat_OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString cmessage, ref bool isHandled)
+        // What to do with chat messages
+        void Chat_OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString cmessage, ref bool isHandled)
         {
-
             if (_channels.Contains(type))
             {
-
-                SeString fmessage = new SeString(new List<Payload>());
+                var fmessage = new SeString(new List<Payload>());
                 fmessage.Append(cmessage);
 
-                string PName = "";
+                var PName = "";
                 if (sender.Payloads.Count == 1)
                 {
                     PName = pluginInterface.ClientState.LocalPlayer.Name;
@@ -251,19 +236,20 @@ namespace ChatBubbles
                     {
                         if (payload.Type == PayloadType.Player)
                         {
-                            PlayerPayload pPayload = (PlayerPayload)payload;
+                            var pPayload = (PlayerPayload)payload;
                             PName = pPayload.PlayerName;
                         }
                     }
                 }
-     
-                if(type == XivChatType.StandardEmote || type == XivChatType.CustomEmote)
+
+                if (type == XivChatType.StandardEmote || type == XivChatType.CustomEmote)
                 {
                     if (cmessage.Payloads[0].Type == PayloadType.Player)
                     {
-                        PlayerPayload pPayload = (PlayerPayload)cmessage.Payloads[0];
+                        var pPayload = (PlayerPayload)cmessage.Payloads[0];
                         PName = pPayload.PlayerName;
                     }
+
                     fmessage.Payloads.Insert(0, new EmphasisItalicPayload(true));
                     fmessage.Payloads.Add(new EmphasisItalicPayload(false));
                 }
@@ -334,31 +320,28 @@ namespace ChatBubbles
                         }
                     }
                 }
-                
             }
         }
 
         public int GetActorID(string nameInput)
         {
-                for (var k = 0; k < pluginInterface.ClientState.Actors.Length; k++)
+            for (var k = 0; k < pluginInterface.ClientState.Actors.Length; k++)
+            {
+                if (pluginInterface.ClientState.Actors[k] is Dalamud.Game.ClientState.Actors.Types.PlayerCharacter pc)
                 {
-                    if (pluginInterface.ClientState.Actors[k] is Dalamud.Game.ClientState.Actors.Types.PlayerCharacter pc)
-                    {
-                        if (pc.Name == nameInput)
-                        {
-                            return pc.ActorId;
-                        }
-                    }
+                    if (pc.Name == nameInput) return pc.ActorId;
                 }
+            }
 
             return 0;
         }
 
-        //ConfigUI
-        private void BubbleConfigUI()
+        // ConfigUI
+        void BubbleConfigUI()
         {
             if (config)
             {
+                ImGui.SetNextWindowSizeConstraints(new Num.Vector2(620, 640), new Num.Vector2(1920, 1080));
                 ImGui.Begin("Chat Bubbles Config", ref config);
                 ImGui.InputInt("Bubble Timer", ref timer);
                 ImGui.SameLine();
@@ -388,24 +371,22 @@ namespace ChatBubbles
                             chooser = textColour[i];
                             picker = true;
                         }
+
                         ImGui.SameLine();
 
                         var enabled = _channels.Contains(e);
                         if (ImGui.Checkbox($"{e}", ref enabled))
                         {
-                            if (enabled)
-                            {
-                                _channels.Add(e);
-                            }
-                            else
-                            {
-                                _channels.Remove(e);
-                            }
+                            if (enabled) _channels.Add(e);
+                            else _channels.Remove(e);
                         }
+
                         ImGui.NextColumn();
                     }
+
                     i++;
                 }
+
                 ImGui.Columns(1);
 
                 if (ImGui.Button("Save and Close Config"))
@@ -413,14 +394,16 @@ namespace ChatBubbles
                     SaveConfig();
                     config = false;
                 }
+
                 ImGui.End();
             }
 
             if (picker)
             {
+                ImGui.SetNextWindowSizeConstraints(new Num.Vector2(320, 440), new Num.Vector2(640, 880));
                 ImGui.Begin("UIColor Picker", ref picker);
-                ImGui.Columns(10);
-                foreach(var z in uiColours)
+                ImGui.Columns(10, "##columnsID", false);
+                foreach (var z in uiColours)
                 {
                     var temp = BitConverter.GetBytes(z.UIForeground);
                     if (ImGui.ColorButton(z.RowId.ToString(), new Num.Vector4(
@@ -433,8 +416,10 @@ namespace ChatBubbles
                         chooser.option = z.RowId;
                         picker = false;
                     }
+
                     ImGui.NextColumn();
                 }
+
                 ImGui.Columns(1);
                 ImGui.End();
             }
@@ -443,15 +428,12 @@ namespace ChatBubbles
             {
                 if ((DateTime.Now - charDatas[i].DateTime).TotalSeconds > (double)timer - (0.5 * (double)timer))
                 {
-                    //if (debug) PluginLog.Log("Removing");
+                    // if (debug) PluginLog.Log("Removing");
                     charDatas.RemoveAt(i);
                     i--;
                 }
-                    
             }
-
         }
-
 
         public enum SeBubbleStatus : uint
         {
@@ -468,8 +450,6 @@ namespace ChatBubbles
             public SeBubbleStatus Status;
             // Pretty sure there's more shit but I don't think it's relevant
         };
-
-
 
         public class charData
         {
@@ -491,7 +471,7 @@ namespace ChatBubbles
         public int Version { get; set; } = 0;
         public List<XivChatType> Channels { get; set; } = new List<XivChatType>();
         public int Timer { get; set; } = 7;
-        public UIColorPick[] TextColour { get; set; } = 
+        public UIColorPick[] TextColour { get; set; } =
         {
             new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
             new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
