@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Dalamud.Configuration;
 using Dalamud.Game.Chat;
 using Dalamud.Game.Chat.SeStringHandling;
-using Dalamud.Plugin;
+using Dalamud.Game.Chat.SeStringHandling.Payloads;
 using Dalamud.Game.Command;
 using Dalamud.Hooking;
+using Dalamud.Plugin;
 using ImGuiNET;
-using Dalamud.Configuration;
-using System.Runtime.InteropServices;
-using Dalamud.Game.Chat.SeStringHandling.Payloads;
 using Lumina.Excel.GeneratedSheets;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Num = System.Numerics;
 
 namespace ChatBubbles
@@ -17,7 +17,7 @@ namespace ChatBubbles
     public class ChatBubbles : IDalamudPlugin
     {
         public string Name => "Chat Bubbles";
-        DalamudPluginInterface pluginInterface;
+        private DalamudPluginInterface pluginInterface;
         public Config Configuration;
         public bool enable = true;
         public bool picker;
@@ -63,17 +63,20 @@ namespace ChatBubbles
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, CharSet = CharSet.Ansi)]
         public unsafe delegate IntPtr UpdateBubble(SeBubble* bubble, IntPtr actor, IntPtr dunnoA, IntPtr dunnoB);
-        UpdateBubble UpdateBubbleFunc;
-        Hook<UpdateBubble> UpdateBubbleFuncHook;
+
+        private UpdateBubble UpdateBubbleFunc;
+        private Hook<UpdateBubble> UpdateBubbleFuncHook;
         public IntPtr UpdateBubblePtr;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, CharSet = CharSet.Ansi)]
         public delegate IntPtr OpenBubble(IntPtr self, IntPtr actor, IntPtr textPtr, bool notSure);
-        OpenBubble OpenBubbleFunc;
-        Hook<OpenBubble> OpenBubbleFuncHook;
+
+        private OpenBubble OpenBubbleFunc;
+        private Hook<OpenBubble> OpenBubbleFuncHook;
         public IntPtr OpenBubblePtr;
 
         public Lumina.Excel.ExcelSheet<UIColor> uiColours;
+
         public unsafe void Initialize(DalamudPluginInterface pluginInterface)
         {
             this.pluginInterface = pluginInterface;
@@ -212,13 +215,13 @@ namespace ChatBubbles
         }
 
         // What to do when command is called
-        void Command(string command, string arguments) => config = true;
+        private void Command(string command, string arguments) => config = true;
 
         // What to do when plugin install config button is pressed
-        void BubbleConfig(object Sender, EventArgs args) => config = true;
+        private void BubbleConfig(object Sender, EventArgs args) => config = true;
 
         // What to do with chat messages
-        void Chat_OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString cmessage, ref bool isHandled)
+        private void Chat_OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString cmessage, ref bool isHandled)
         {
             if (_channels.Contains(type))
             {
@@ -337,7 +340,7 @@ namespace ChatBubbles
         }
 
         // ConfigUI
-        void BubbleConfigUI()
+        private void BubbleConfigUI()
         {
             if (config)
             {
@@ -442,6 +445,7 @@ namespace ChatBubbles
             INIT = 2,
             OFF = 3
         }
+
         public struct SeBubble
         {
             public uint Id;
@@ -471,6 +475,7 @@ namespace ChatBubbles
         public int Version { get; set; } = 0;
         public List<XivChatType> Channels { get; set; } = new List<XivChatType>();
         public int Timer { get; set; } = 7;
+
         public UIColorPick[] TextColour { get; set; } =
         {
             new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
@@ -487,6 +492,7 @@ namespace ChatBubbles
             new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
             new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }
         };
+
         public int Queue { get; set; } = 3;
     }
 }
