@@ -25,6 +25,7 @@ namespace ChatBubbles
         public int timer = 3;
         public UIColorPick chooser;
         public int queue;
+        public bool stack;
 
 #if DEBUG
         public bool config = true;
@@ -86,6 +87,7 @@ namespace ChatBubbles
             _channels = Configuration.Channels;
             textColour = Configuration.TextColour;
             queue = Configuration.Queue;
+            stack = Configuration.Stack;
 
             this.pluginInterface.Framework.Gui.Chat.OnChatMessage += Chat_OnChatMessage;
             this.pluginInterface.UiBuilder.OnBuildUi += BubbleConfigUI;
@@ -124,6 +126,7 @@ namespace ChatBubbles
             Configuration.Channels = _channels;
             Configuration.TextColour = textColour;
             Configuration.Queue = queue;
+            Configuration.Stack = stack;
             pluginInterface.SavePluginConfig(Configuration);
         }
 
@@ -228,21 +231,15 @@ namespace ChatBubbles
                 var fmessage = new SeString(new List<Payload>());
                 fmessage.Append(cmessage);
 
-                var PName = "";
-                if (sender.Payloads.Count == 1)
+                string PName;
+                if (sender.Payloads[0].Type == PayloadType.Player)
                 {
-                    PName = pluginInterface.ClientState.LocalPlayer.Name;
+                    var pPayload = (PlayerPayload)sender.Payloads[0];
+                    PName = pPayload.PlayerName;
                 }
                 else
                 {
-                    foreach (Payload payload in sender.Payloads)
-                    {
-                        if (payload.Type == PayloadType.Player)
-                        {
-                            var pPayload = (PlayerPayload)payload;
-                            PName = pPayload.PlayerName;
-                        }
-                    }
+                    PName = pluginInterface.ClientState.LocalPlayer.Name;
                 }
 
                 if (type == XivChatType.StandardEmote || type == XivChatType.CustomEmote)
@@ -475,6 +472,7 @@ namespace ChatBubbles
         public int Version { get; set; } = 0;
         public List<XivChatType> Channels { get; set; } = new List<XivChatType>();
         public int Timer { get; set; } = 7;
+        public bool Stack { get; set; } = false;
 
         public UIColorPick[] TextColour { get; set; } =
         {
