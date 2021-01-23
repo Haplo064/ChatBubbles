@@ -257,6 +257,11 @@ namespace ChatBubbles
                     var pPayload = (PlayerPayload)sender.Payloads[0];
                     PName = pPayload.PlayerName;
                 }
+                if (sender.Payloads[0].Type == PayloadType.Icon && sender.Payloads[1].Type == PayloadType.Player)
+                {
+                    var pPayload = (PlayerPayload)sender.Payloads[1];
+                    PName = pPayload.PlayerName;
+                }
 
                 if (type == XivChatType.StandardEmote || type == XivChatType.CustomEmote)
                 {
