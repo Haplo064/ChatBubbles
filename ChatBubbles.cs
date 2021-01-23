@@ -141,9 +141,20 @@ namespace ChatBubbles
                 {
                     if (bubble->Status == SeBubbleStatus.OFF)
                     {
-                        if (debug) PluginLog.Log("Switch On");
+                        if (debug)
+                        {
+                            PluginLog.Log("Switch On");
+                            PluginLog.Log($"ActorID: {cd.actorID.ToString()}");
+                        }
                         bubble->Status = SeBubbleStatus.INIT;
                         bubble->Timer = timer;
+                    }
+
+                    if (bubble->Status == SeBubbleStatus.ON && cd.stack)
+                    {
+                        bubble->Status = SeBubbleStatus.OFF;
+                        bubble->Timer = 0;
+                        cd.stack = false;
                     }
 
                     break;
@@ -157,10 +168,12 @@ namespace ChatBubbles
         {
             var IdOffset = 116;
             int actorID = Marshal.ReadInt32(actor, IdOffset);
+            //PluginLog.Log($"ActorID: {actorID}");
             IntPtr newPointer = textPtr;
 
             foreach (charData cd in charDatas)
             {
+                //PluginLog.Log($"Expect: {actorID}, Get: {cd.actorID}");
                 if (actorID == cd.actorID)
                 {
                     if (debug)
@@ -176,7 +189,11 @@ namespace ChatBubbles
                         Marshal.Copy(bytes, 0, newPointer, bytes.Length);
                         Marshal.WriteByte(newPointer, bytes.Length, 0);
                         // TODO: Maybe write to game here?
-                        // Marshal.WriteByte(textPtr, bytes.Length, 0);
+                        //for (int i = 0; i < bytes.Length; i++)
+                        //{
+                        //    Marshal.WriteByte(textPtr, i, bytes[i]);
+                        // }
+                        //Marshal.WriteByte(textPtr, bytes.Length, 0);
                         textPtr = newPointer;
                     }
 
@@ -229,17 +246,16 @@ namespace ChatBubbles
             if (_channels.Contains(type))
             {
                 var fmessage = new SeString(new List<Payload>());
+                var nline = new SeString(new List<Payload>());
+                nline.Payloads.Add(new TextPayload("\n"));
+
                 fmessage.Append(cmessage);
 
-                string PName;
+                string PName = pluginInterface.ClientState.LocalPlayer.Name;
                 if (sender.Payloads[0].Type == PayloadType.Player)
                 {
                     var pPayload = (PlayerPayload)sender.Payloads[0];
                     PName = pPayload.PlayerName;
-                }
-                else
-                {
-                    PName = pluginInterface.ClientState.LocalPlayer.Name;
                 }
 
                 if (type == XivChatType.StandardEmote || type == XivChatType.CustomEmote)
@@ -281,17 +297,29 @@ namespace ChatBubbles
 
                     foreach (charData cd in charDatas)
                     {
+                        if (debug) PluginLog.Log($"Check: {actr}, Against: {cd.actorID}");
+
                         if (cd.actorID == actr)
                         {
                             if (debug) PluginLog.Log("Priors found");
                             add += timer;
                             update++;
+
+                            if (stack)
+                            {
+                                update = 99999;
+                                cd.message.Append(nline);
+                                cd.message.Append(fmessage);
+                                cd.stack = true;
+                                cd.DateTime = DateTime.Now;
+                            }
                         }
                     }
 
-                    if (debug) PluginLog.Log("Adding new one");
+
                     if (update == 0)
                     {
+                        if (debug) PluginLog.Log("Adding new one");
                         charDatas.Add(new charData
                         {
                             actorID = actr,
@@ -352,6 +380,9 @@ namespace ChatBubbles
                 ImGui.Checkbox("Debug Logging", ref debug);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Enable logging for debug purposes.\nOnly enable if you are going to share the `dalamud.txt` file in discord."); }
+                ImGui.Checkbox("Stack Messages", ref stack);
+                ImGui.SameLine();
+                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Instead of queueing bubbles, this option instead 'stacks' them inside the one bubble."); }
                 int i = 0;
                 ImGui.Text("Enabled channels:");
                 ImGui.SameLine();
@@ -426,7 +457,7 @@ namespace ChatBubbles
 
             for (int i = 0; i < charDatas.Count; i++)
             {
-                if ((DateTime.Now - charDatas[i].DateTime).TotalSeconds > (double)timer - (0.5 * (double)timer))
+                if ((DateTime.Now - charDatas[i].DateTime).TotalMilliseconds > (timer * 999))
                 {
                     // if (debug) PluginLog.Log("Removing");
                     charDatas.RemoveAt(i);
@@ -458,6 +489,7 @@ namespace ChatBubbles
             public int actorID;
             public DateTime DateTime;
             public string name;
+            public bool stack = false;
         }
     }
 
