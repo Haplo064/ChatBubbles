@@ -1,7 +1,7 @@
 ﻿using Dalamud.Configuration;
-using Dalamud.Game.Chat;
-using Dalamud.Game.Chat.SeStringHandling;
-using Dalamud.Game.Chat.SeStringHandling.Payloads;
+using Dalamud.Game.Text;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Game.Command;
 using Dalamud.Hooking;
 using Dalamud.Plugin;
@@ -9,7 +9,10 @@ using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Runtime.InteropServices;
+using Dalamud.Game.ClientState.Actors.Types;
 using Num = System.Numerics;
 
 namespace ChatBubbles
@@ -17,27 +20,26 @@ namespace ChatBubbles
     public class ChatBubbles : IDalamudPlugin
     {
         public string Name => "Chat Bubbles";
-        private DalamudPluginInterface pluginInterface;
-        public Config Configuration;
-        public bool enable = true;
-        public bool picker;
-        public List<charData> charDatas = new List<charData>();
-        public int timer = 3;
-        public UIColorPick chooser;
-        public int queue;
-        public bool stack;
+        private DalamudPluginInterface _pluginInterface;
+        private Config _configuration;
+        private bool _picker;
+        private readonly List<CharData> _charDatas = new List<CharData>();
+        private int _timer = 3;
+        private UiColorPick _chooser;
+        private int _queue;
+        private bool _stack;
 
 #if DEBUG
-        public bool config = true;
-        public bool debug = true;
+        private bool _config = true;
+        private bool _debug = true;
 #else
-        public bool config = false;
-        public bool debug = false;
+        private bool _config = false;
+        private bool _debug = false;
 #endif
 
-        public List<XivChatType> _channels = new List<XivChatType>();
+        private List<XivChatType> _channels = new List<XivChatType>();
 
-        public List<XivChatType> order = new List<XivChatType>
+        private readonly List<XivChatType> _order = new List<XivChatType>
         {
             XivChatType.None, XivChatType.None, XivChatType.None, XivChatType.None, XivChatType.Say,
             XivChatType.Shout, XivChatType.TellOutgoing, XivChatType.TellIncoming, XivChatType.Party, XivChatType.Alliance,
@@ -49,7 +51,7 @@ namespace ChatBubbles
             XivChatType.CrossLinkShell5, XivChatType.CrossLinkShell6, XivChatType.CrossLinkShell7, XivChatType.CrossLinkShell8
         };
 
-        public bool[] yesno = {
+        private readonly bool[] _yesno = {
             false, false, false, false, true,
             true, true, true, true, true,
             true, true, true, true, true,
@@ -60,148 +62,134 @@ namespace ChatBubbles
             true, true, true, true
         };
 
-        public UIColorPick[] textColour;
+
+        private UiColorPick[] _textColour;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, CharSet = CharSet.Ansi)]
-        public unsafe delegate IntPtr UpdateBubble(SeBubble* bubble, IntPtr actor, IntPtr dunnoA, IntPtr dunnoB);
+        private unsafe delegate IntPtr UpdateBubble(SeBubble* bubble, IntPtr actor, IntPtr dunnoA, IntPtr dunnoB);
 
-        private UpdateBubble UpdateBubbleFunc;
-        private Hook<UpdateBubble> UpdateBubbleFuncHook;
-        public IntPtr UpdateBubblePtr;
+        private UpdateBubble _updateBubbleFunc;
+        private Hook<UpdateBubble> _updateBubbleFuncHook;
+        private IntPtr _updateBubblePtr;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, CharSet = CharSet.Ansi)]
-        public delegate IntPtr OpenBubble(IntPtr self, IntPtr actor, IntPtr textPtr, bool notSure);
+        private delegate IntPtr OpenBubble(IntPtr self, IntPtr actor, IntPtr textPtr, bool notSure);
 
-        private OpenBubble OpenBubbleFunc;
-        private Hook<OpenBubble> OpenBubbleFuncHook;
-        public IntPtr OpenBubblePtr;
+        private OpenBubble _openBubbleFunc;
+        private Hook<OpenBubble> _openBubbleFuncHook;
+        private IntPtr _openBubblePtr;
 
-        public Lumina.Excel.ExcelSheet<UIColor> uiColours;
+        private Lumina.Excel.ExcelSheet<UIColor> _uiColours;
 
         public unsafe void Initialize(DalamudPluginInterface pluginInterface)
         {
-            this.pluginInterface = pluginInterface;
-            uiColours = pluginInterface.Data.Excel.GetSheet<UIColor>();
-            Configuration = pluginInterface.GetPluginConfig() as Config ?? new Config();
-            timer = Configuration.Timer;
-            _channels = Configuration.Channels;
-            textColour = Configuration.TextColour;
-            queue = Configuration.Queue;
-            stack = Configuration.Stack;
+            _pluginInterface = pluginInterface;
+            _uiColours = pluginInterface.Data.Excel.GetSheet<UIColor>();
+            _configuration = pluginInterface.GetPluginConfig() as Config ?? new Config();
+            _timer = _configuration.Timer;
+            _channels = _configuration.Channels;
+            _textColour = _configuration.TextColour;
+            _queue = _configuration.Queue;
+            _stack = _configuration.Stack;
 
-            this.pluginInterface.Framework.Gui.Chat.OnChatMessage += Chat_OnChatMessage;
-            this.pluginInterface.UiBuilder.OnBuildUi += BubbleConfigUI;
-            this.pluginInterface.UiBuilder.OnOpenConfigUi += BubbleConfig;
-            this.pluginInterface.CommandManager.AddHandler("/bub", new CommandInfo(Command)
+            _pluginInterface.Framework.Gui.Chat.OnChatMessage += Chat_OnChatMessage;
+            _pluginInterface.UiBuilder.OnBuildUi += BubbleConfigUi;
+            _pluginInterface.UiBuilder.OnOpenConfigUi += BubbleConfig;
+            _pluginInterface.CommandManager.AddHandler("/bub", new CommandInfo(Command)
             {
                 HelpMessage = "Opens the Chat Bubble config menu"
             });
 
-            UpdateBubblePtr = pluginInterface.TargetModuleScanner.ScanText("48 85 D2 0F 84 ?? ?? ?? ?? 48 89 5C 24 ?? 57 48 83 EC 20 8B 41 0C");
-            UpdateBubbleFunc = new UpdateBubble(UpdateBubbleFuncFunc);
+            _updateBubblePtr = pluginInterface.TargetModuleScanner.ScanText("48 85 D2 0F 84 ?? ?? ?? ?? 48 89 5C 24 ?? 57 48 83 EC 20 8B 41 0C");
+            _updateBubbleFunc = UpdateBubbleFuncFunc;
             try
             {
-                UpdateBubbleFuncHook = new Hook<UpdateBubble>(UpdateBubblePtr + 0x9, UpdateBubbleFunc, this);
-                UpdateBubbleFuncHook.Enable();
-                if (debug) PluginLog.Log("GOOD");
+                _updateBubbleFuncHook = new Hook<UpdateBubble>(_updateBubblePtr + 0x9, _updateBubbleFunc, this);
+                _updateBubbleFuncHook.Enable();
+                if (_debug) PluginLog.Log("GOOD");
             }
             catch (Exception e)
-            { PluginLog.Log("BAD\n" + e.ToString()); }
+            { PluginLog.Log("BAD\n" + e); }
 
-            OpenBubblePtr = pluginInterface.TargetModuleScanner.ScanText("E8 ?? ?? ?? ?? 80 BF ?? ?? ?? ?? ?? C7 07 ?? ?? ?? ??");
-            OpenBubbleFunc = new OpenBubble(OpenBubbleFuncFunc);
+            _openBubblePtr = pluginInterface.TargetModuleScanner.ScanText("E8 ?? ?? ?? ?? 80 BF ?? ?? ?? ?? ?? C7 07 ?? ?? ?? ??");
+            _openBubbleFunc = OpenBubbleFuncFunc;
             try
             {
-                OpenBubbleFuncHook = new Hook<OpenBubble>(OpenBubblePtr, OpenBubbleFunc, this);
-                OpenBubbleFuncHook.Enable();
-                if (debug) PluginLog.Log("GOOD2");
+                _openBubbleFuncHook = new Hook<OpenBubble>(_openBubblePtr, _openBubbleFunc, this);
+                _openBubbleFuncHook.Enable();
+                if (_debug) PluginLog.Log("GOOD2");
             }
             catch (Exception e)
-            { PluginLog.Log("BAD\n" + e.ToString()); }
+            { PluginLog.Log("BAD\n" + e); }
         }
 
-        public void SaveConfig()
+        private void SaveConfig()
         {
-            Configuration.Timer = timer;
-            Configuration.Channels = _channels;
-            Configuration.TextColour = textColour;
-            Configuration.Queue = queue;
-            Configuration.Stack = stack;
-            pluginInterface.SavePluginConfig(Configuration);
+            _configuration.Timer = _timer;
+            _configuration.Channels = _channels;
+            _configuration.TextColour = _textColour;
+            _configuration.Queue = _queue;
+            _configuration.Stack = _stack;
+            _pluginInterface.SavePluginConfig(_configuration);
         }
 
-        public unsafe IntPtr UpdateBubbleFuncFunc(SeBubble* bubble, IntPtr actor, IntPtr dunnoA, IntPtr dunnoB)
+        private unsafe IntPtr UpdateBubbleFuncFunc(SeBubble* bubble, IntPtr actor, IntPtr dunnoA, IntPtr dunnoB)
         {
-            var IdOffset = 116;
-            int actorID = Marshal.ReadInt32(actor + IdOffset);
+            const int idOffset = 116;
+            var actorId = Marshal.ReadInt32(actor + idOffset);
 
-            foreach (charData cd in charDatas)
+            foreach (var cd in _charDatas.Where(cd => actorId == cd.actorId))
             {
-                if (actorID == cd.actorID)
+                if (bubble->Status == SeBubbleStatus.Off)
                 {
-                    if (bubble->Status == SeBubbleStatus.OFF)
+                    if (_debug)
                     {
-                        if (debug)
-                        {
-                            PluginLog.Log("Switch On");
-                            PluginLog.Log($"ActorID: {cd.actorID.ToString()}");
-                        }
-                        bubble->Status = SeBubbleStatus.INIT;
-                        bubble->Timer = timer;
+                        PluginLog.Log("Switch On");
+                        PluginLog.Log($"ActorID: {cd.actorId}");
                     }
 
-                    if (bubble->Status == SeBubbleStatus.ON && cd.stack)
-                    {
-                        bubble->Status = SeBubbleStatus.OFF;
-                        bubble->Timer = 0;
-                        cd.stack = false;
-                    }
-
-                    break;
+                    bubble->Status = SeBubbleStatus.Init;
+                    bubble->Timer = _timer;
                 }
+
+                if (bubble->Status == SeBubbleStatus.On && cd.Stack)
+                {
+                    bubble->Status = SeBubbleStatus.Off;
+                    bubble->Timer = 0;
+                    cd.Stack = false;
+                }
+                break;
             }
 
-            return UpdateBubbleFuncHook.Original(bubble, actor, dunnoA, dunnoB);
+            return _updateBubbleFuncHook.Original(bubble, actor, dunnoA, dunnoB);
         }
 
-        public unsafe IntPtr OpenBubbleFuncFunc(IntPtr self, IntPtr actor, IntPtr textPtr, bool notSure)
+        private IntPtr OpenBubbleFuncFunc(IntPtr self, IntPtr actor, IntPtr textPtr, bool notSure)
         {
-            var IdOffset = 116;
-            int actorID = Marshal.ReadInt32(actor, IdOffset);
-            //PluginLog.Log($"ActorID: {actorID}");
-            IntPtr newPointer = textPtr;
+            const int idOffset = 116;
+            var actorId = Marshal.ReadInt32(actor, idOffset);
 
-            foreach (charData cd in charDatas)
+            foreach (var cd in _charDatas.Where(cd => actorId == cd.actorId))
             {
-                //PluginLog.Log($"Expect: {actorID}, Get: {cd.actorID}");
-                if (actorID == cd.actorID)
+                if (_debug)
                 {
-                    if (debug)
-                    {
-                        PluginLog.Log("Update ballon text");
-                        PluginLog.Log(cd.message.TextValue);
-                    }
-
-                    if (cd.message.TextValue.Length > 0)
-                    {
-                        var bytes = cd.message.Encode();
-                        newPointer = Marshal.AllocHGlobal(bytes.Length + 1);
-                        Marshal.Copy(bytes, 0, newPointer, bytes.Length);
-                        Marshal.WriteByte(newPointer, bytes.Length, 0);
-                        // TODO: Maybe write to game here?
-                        //for (int i = 0; i < bytes.Length; i++)
-                        //{
-                        //    Marshal.WriteByte(textPtr, i, bytes[i]);
-                        // }
-                        //Marshal.WriteByte(textPtr, bytes.Length, 0);
-                        textPtr = newPointer;
-                    }
-
-                    break;
+                    PluginLog.Log("Update ballon text");
+                    PluginLog.Log(cd.message.TextValue);
                 }
+
+                if (cd.message.TextValue.Length > 0)
+                {
+                    var bytes = cd.message.Encode();
+                    var newPointer = Marshal.AllocHGlobal(bytes.Length + 1);
+                    Marshal.Copy(bytes, 0, newPointer, bytes.Length);
+                    Marshal.WriteByte(newPointer, bytes.Length, 0);
+                    textPtr = newPointer;
+                }
+
+                break;
             }
 
-            return OpenBubbleFuncHook.Original(self, actor, textPtr, notSure);
+            return _openBubbleFuncHook.Original(self, actor, textPtr, notSure);
         }
 
         public unsafe SeString GetSeStringFromPtr(byte* ptr)
@@ -216,7 +204,7 @@ namespace ChatBubbles
 
             var bytes = new byte[offset];
             Marshal.Copy(new IntPtr(ptr), bytes, 0, offset);
-            return pluginInterface.SeStringManager.Parse(bytes);
+            return _pluginInterface.SeStringManager.Parse(bytes);
         }
 
         public class PluginConfiguration : IPluginConfiguration
@@ -226,186 +214,176 @@ namespace ChatBubbles
 
         public void Dispose()
         {
-            pluginInterface.Framework.Gui.Chat.OnChatMessage -= Chat_OnChatMessage;
-            pluginInterface.UiBuilder.OnBuildUi -= BubbleConfigUI;
-            pluginInterface.UiBuilder.OnOpenConfigUi -= BubbleConfig;
-            pluginInterface.CommandManager.RemoveHandler("/bub");
-            UpdateBubbleFuncHook.Disable();
-            OpenBubbleFuncHook.Disable();
+            _pluginInterface.Framework.Gui.Chat.OnChatMessage -= Chat_OnChatMessage;
+            _pluginInterface.UiBuilder.OnBuildUi -= BubbleConfigUi;
+            _pluginInterface.UiBuilder.OnOpenConfigUi -= BubbleConfig;
+            _pluginInterface.CommandManager.RemoveHandler("/bub");
+            _updateBubbleFuncHook.Disable();
+            _openBubbleFuncHook.Disable();
         }
 
         // What to do when command is called
-        private void Command(string command, string arguments) => config = true;
+        private void Command(string command, string arguments) => _config = true;
 
         // What to do when plugin install config button is pressed
-        private void BubbleConfig(object Sender, EventArgs args) => config = true;
+        private void BubbleConfig(object sender, EventArgs args) => _config = true;
 
         // What to do with chat messages
         private void Chat_OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString cmessage, ref bool isHandled)
         {
-            if (_channels.Contains(type))
+            if (isHandled) return;
+            if (!_channels.Contains(type)) return;
+            var fmessage = new SeString(new List<Payload>());
+            var nline = new SeString(new List<Payload>());
+            nline.Payloads.Add(new TextPayload("\n"));
+
+            fmessage.Append(cmessage);
+
+            var pName = _pluginInterface.ClientState.LocalPlayer.Name;
+            if (sender.Payloads[0].Type == PayloadType.Player)
             {
-                var fmessage = new SeString(new List<Payload>());
-                var nline = new SeString(new List<Payload>());
-                nline.Payloads.Add(new TextPayload("\n"));
+                var pPayload = (PlayerPayload) sender.Payloads[0];
+                pName = pPayload.PlayerName;
+            }
 
-                fmessage.Append(cmessage);
+            if (sender.Payloads[0].Type == PayloadType.Icon && sender.Payloads[1].Type == PayloadType.Player)
+            {
+                var pPayload = (PlayerPayload) sender.Payloads[1];
+                pName = pPayload.PlayerName;
+            }
 
-                string PName = pluginInterface.ClientState.LocalPlayer.Name;
-                if (sender.Payloads[0].Type == PayloadType.Player)
+            if (type == XivChatType.StandardEmote || type == XivChatType.CustomEmote)
+            {
+                if (cmessage.Payloads[0].Type == PayloadType.Player)
                 {
-                    var pPayload = (PlayerPayload)sender.Payloads[0];
-                    PName = pPayload.PlayerName;
-                }
-                if (sender.Payloads[0].Type == PayloadType.Icon && sender.Payloads[1].Type == PayloadType.Player)
-                {
-                    var pPayload = (PlayerPayload)sender.Payloads[1];
-                    PName = pPayload.PlayerName;
-                }
-
-                if (type == XivChatType.StandardEmote || type == XivChatType.CustomEmote)
-                {
-                    if (cmessage.Payloads[0].Type == PayloadType.Player)
-                    {
-                        var pPayload = (PlayerPayload)cmessage.Payloads[0];
-                        PName = pPayload.PlayerName;
-                    }
-
-                    fmessage.Payloads.Insert(0, new EmphasisItalicPayload(true));
-                    fmessage.Payloads.Add(new EmphasisItalicPayload(false));
+                    var pPayload = (PlayerPayload) cmessage.Payloads[0];
+                    pName = pPayload.PlayerName;
                 }
 
-                int actr = GetActorID(PName);
+                fmessage.Payloads.Insert(0, new EmphasisItalicPayload(true));
+                fmessage.Payloads.Add(new EmphasisItalicPayload(false));
+            }
 
-                if (debug)
+            var actr = GetActorId(pName);
+
+            if (_debug)
+            {
+                PluginLog.Log($"Type={type}");
+                PluginLog.Log($"Sender={pName}");
+                PluginLog.Log($"Message Raw={cmessage.TextValue}");
+                PluginLog.Log($"ActorID={actr}");
+            }
+
+            if (type == XivChatType.TellOutgoing)
+            {
+                actr = _pluginInterface.ClientState.LocalPlayer.ActorId;
+                pName = _pluginInterface.ClientState.LocalPlayer.Name;
+            }
+
+            fmessage.Payloads.Insert(0,
+                new UIForegroundPayload(_pluginInterface.Data, (ushort) _textColour[_order.IndexOf(type)].Option));
+            fmessage.Payloads.Add(new UIForegroundPayload(_pluginInterface.Data, 0));
+
+            if (actr == 0) return;
+            var update = 0;
+            var time = new TimeSpan(0, 0, 0);
+            var add = 0;
+
+            foreach (var cd in _charDatas)
+            {
+                if (_debug) PluginLog.Log($"Check: {actr}, Against: {cd.actorId}");
+
+                if (cd.actorId != actr) continue;
+                if (_debug) PluginLog.Log("Priors found");
+                add += _timer;
+                update++;
+
+                if (!_stack) continue;
+                update = 99999;
+                cd.message.Append(nline);
+                cd.message.Append(fmessage);
+                cd.Stack = true;
+                cd.dateTime = DateTime.Now;
+            }
+
+
+            if (update == 0)
+            {
+                if (_debug) PluginLog.Log("Adding new one");
+                _charDatas.Add(new CharData
                 {
-                    PluginLog.Log($"Type={ type.ToString()}");
-                    PluginLog.Log($"Sender={ PName }");
-                    PluginLog.Log($"Message Raw={ cmessage.TextValue }");
-                    PluginLog.Log($"ActorID={actr}");
+                    actorId = actr,
+                    dateTime = DateTime.Now,
+                    message = fmessage,
+                    name = pName,
+                });
+            }
+            else
+            {
+                if (_debug)
+                {
+                    PluginLog.Log(DateTime.Now.Add(time).ToString(CultureInfo.CurrentCulture));
                 }
 
-                if (type == XivChatType.TellOutgoing)
+                if (update >= _queue) return;
+                time = new TimeSpan(0, 0, add);
+                _charDatas.Add(new CharData
                 {
-                    actr = pluginInterface.ClientState.LocalPlayer.ActorId;
-                    PName = pluginInterface.ClientState.LocalPlayer.Name;
-                }
-
-                fmessage.Payloads.Insert(0, new UIForegroundPayload(pluginInterface.Data, (ushort)textColour[order.IndexOf(type)].option));
-                fmessage.Payloads.Add(new UIForegroundPayload(pluginInterface.Data, 0));
-
-                if (actr != 0)
-                {
-                    int update = 0;
-                    TimeSpan time = new TimeSpan(0, 0, 0);
-                    int add = 0;
-
-                    foreach (charData cd in charDatas)
-                    {
-                        if (debug) PluginLog.Log($"Check: {actr}, Against: {cd.actorID}");
-
-                        if (cd.actorID == actr)
-                        {
-                            if (debug) PluginLog.Log("Priors found");
-                            add += timer;
-                            update++;
-
-                            if (stack)
-                            {
-                                update = 99999;
-                                cd.message.Append(nline);
-                                cd.message.Append(fmessage);
-                                cd.stack = true;
-                                cd.DateTime = DateTime.Now;
-                            }
-                        }
-                    }
-
-
-                    if (update == 0)
-                    {
-                        if (debug) PluginLog.Log("Adding new one");
-                        charDatas.Add(new charData
-                        {
-                            actorID = actr,
-                            DateTime = DateTime.Now,
-                            message = fmessage,
-                            name = PName,
-                        });
-                    }
-                    else
-                    {
-                        if (debug)
-                        {
-                            PluginLog.Log(DateTime.Now.Add(time).ToString());
-                        }
-
-                        if (update < queue)
-                        {
-                            time = new TimeSpan(0, 0, add);
-                            charDatas.Add(new charData
-                            {
-                                actorID = actr,
-                                DateTime = DateTime.Now.Add(time),
-                                message = fmessage,
-                                name = PName,
-                            });
-                        }
-                    }
-                }
+                    actorId = actr,
+                    dateTime = DateTime.Now.Add(time),
+                    message = fmessage,
+                    name = pName,
+                });
             }
         }
 
-        public int GetActorID(string nameInput)
+        private int GetActorId(string nameInput)
         {
-            for (var k = 0; k < pluginInterface.ClientState.Actors.Length; k++)
+            foreach (var t in _pluginInterface.ClientState.Actors)
             {
-                if (pluginInterface.ClientState.Actors[k] is Dalamud.Game.ClientState.Actors.Types.PlayerCharacter pc)
-                {
-                    if (pc.Name == nameInput) return pc.ActorId;
-                }
+                if (!(t is PlayerCharacter pc)) continue;
+                if (pc.Name == nameInput) return pc.ActorId;
             }
-
             return 0;
         }
 
         // ConfigUI
-        private void BubbleConfigUI()
+        private void BubbleConfigUi()
         {
-            if (config)
+            if (_config)
             {
                 ImGui.SetNextWindowSizeConstraints(new Num.Vector2(620, 640), new Num.Vector2(1920, 1080));
-                ImGui.Begin("Chat Bubbles Config", ref config);
-                ImGui.InputInt("Bubble Timer", ref timer);
+                ImGui.Begin("Chat Bubbles Config", ref _config);
+                ImGui.InputInt("Bubble Timer", ref _timer);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("How long the bubble will last on screen."); }
-                ImGui.InputInt("Maximum Bubble Queue", ref queue);
+                ImGui.InputInt("Maximum Bubble Queue", ref _queue);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("How many bubbles can be queued to be seen per person."); }
-                ImGui.Checkbox("Debug Logging", ref debug);
+                ImGui.Checkbox("Debug Logging", ref _debug);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Enable logging for debug purposes.\nOnly enable if you are going to share the `dalamud.txt` file in discord."); }
-                ImGui.Checkbox("Stack Messages", ref stack);
+                ImGui.Checkbox("Stack Messages", ref _stack);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Instead of queueing bubbles, this option instead 'stacks' them inside the one bubble."); }
-                int i = 0;
+                var i = 0;
                 ImGui.Text("Enabled channels:");
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Which chat channels to show bubbles for."); }
                 ImGui.Columns(2);
                 foreach (var e in (XivChatType[])Enum.GetValues(typeof(XivChatType)))
                 {
-                    if (yesno[i])
+                    if (_yesno[i])
                     {
-                        var txtclr = BitConverter.GetBytes(textColour[i].choice);
+                        var txtclr = BitConverter.GetBytes(_textColour[i].Choice);
                         if (ImGui.ColorButton($"Text Colour##{i}", new Num.Vector4(
                             (float)txtclr[3] / 255,
                             (float)txtclr[2] / 255,
                             (float)txtclr[1] / 255,
                             (float)txtclr[0] / 255)))
                         {
-                            chooser = textColour[i];
-                            picker = true;
+                            _chooser = _textColour[i];
+                            _picker = true;
                         }
 
                         ImGui.SameLine();
@@ -428,18 +406,18 @@ namespace ChatBubbles
                 if (ImGui.Button("Save and Close Config"))
                 {
                     SaveConfig();
-                    config = false;
+                    _config = false;
                 }
 
                 ImGui.End();
             }
 
-            if (picker)
+            if (_picker)
             {
                 ImGui.SetNextWindowSizeConstraints(new Num.Vector2(320, 440), new Num.Vector2(640, 880));
-                ImGui.Begin("UIColor Picker", ref picker);
+                ImGui.Begin("UIColor Picker", ref _picker);
                 ImGui.Columns(10, "##columnsID", false);
-                foreach (var z in uiColours)
+                foreach (var z in _uiColours)
                 {
                     var temp = BitConverter.GetBytes(z.UIForeground);
                     if (ImGui.ColorButton(z.RowId.ToString(), new Num.Vector4(
@@ -448,9 +426,9 @@ namespace ChatBubbles
                         (float)temp[1] / 255,
                         (float)temp[0] / 255)))
                     {
-                        chooser.choice = z.UIForeground;
-                        chooser.option = z.RowId;
-                        picker = false;
+                        _chooser.Choice = z.UIForeground;
+                        _chooser.Option = z.RowId;
+                        _picker = false;
                     }
 
                     ImGui.NextColumn();
@@ -460,48 +438,47 @@ namespace ChatBubbles
                 ImGui.End();
             }
 
-            for (int i = 0; i < charDatas.Count; i++)
+            for (var i = 0; i < _charDatas.Count; i++)
             {
-                if ((DateTime.Now - charDatas[i].DateTime).TotalMilliseconds > (timer * 999))
-                {
-                    // if (debug) PluginLog.Log("Removing");
-                    charDatas.RemoveAt(i);
-                    i--;
-                }
+                if (!((DateTime.Now - _charDatas[i].dateTime).TotalMilliseconds > (_timer * 950))) continue;
+                _charDatas.RemoveAt(i);
+                i--;
             }
         }
 
-        public enum SeBubbleStatus : uint
+        private enum SeBubbleStatus : uint
         {
-            GET_DATA = 0,
-            ON = 1,
-            INIT = 2,
-            OFF = 3
+            GetData = 0,
+            On = 1,
+            Init = 2,
+            Off = 3
         }
 
-        public struct SeBubble
+        [StructLayout(LayoutKind.Explicit, Size = 0x80)]
+        private struct SeBubble
         {
-            public uint Id;
-            public float Timer;
-            public uint Dunno;
-            public SeBubbleStatus Status;
-            // Pretty sure there's more shit but I don't think it's relevant
-        };
+            [FieldOffset(0x0)] private readonly uint Id;
+            [FieldOffset(0x4)] public float Timer;
+            [FieldOffset(0x8)] private readonly uint Unk_8; // enum probably
+            [FieldOffset(0xC)] public SeBubbleStatus Status; // state of the bubble
+            [FieldOffset(0x10)] private readonly ulong Text;
+            [FieldOffset(0x78)] private readonly ulong Unk_78; // check whats in memory here
+        }
 
-        public class charData
+        private class CharData
         {
             public SeString message;
-            public int actorID;
-            public DateTime DateTime;
+            public int actorId;
+            public DateTime dateTime;
             public string name;
-            public bool stack = false;
+            public bool Stack { get; set; }
         }
     }
 
-    public class UIColorPick
+    public class UiColorPick
     {
-        public uint choice { get; set; }
-        public uint option { get; set; }
+        public uint Choice { get; set; }
+        public uint Option { get; set; }
     }
 
     public class Config : IPluginConfiguration
@@ -509,23 +486,23 @@ namespace ChatBubbles
         public int Version { get; set; } = 0;
         public List<XivChatType> Channels { get; set; } = new List<XivChatType>();
         public int Timer { get; set; } = 7;
-        public bool Stack { get; set; } = false;
+        public bool Stack { get; set; }
 
-        public UIColorPick[] TextColour { get; set; } =
+        public UiColorPick[] TextColour { get; set; } =
         {
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 },
-            new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }, new UIColorPick { choice = 0, option =0 }
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 },
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 },
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 },
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 },
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 },
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 },
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 },
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 },
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 },
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 },
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 },
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 },
+            new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }, new UiColorPick { Choice = 0, Option =0 }
         };
 
         public int Queue { get; set; } = 3;
