@@ -236,17 +236,22 @@ namespace ChatBubbles
             var fmessage = new SeString(new List<Payload>());
             var nline = new SeString(new List<Payload>());
             nline.Payloads.Add(new TextPayload("\n"));
-
             fmessage.Append(cmessage);
-
-            var pName = _pluginInterface.ClientState.LocalPlayer.Name;
-            if (sender.Payloads[0].Type == PayloadType.Player)
+            
+            //Checking for ChatTranslator things
+            var skip = 0;
+            if (cmessage.Payloads[0].Type == PayloadType.UIForeground && cmessage.Payloads[1].Type == PayloadType.UIForeground)
             {
-                var pPayload = (PlayerPayload) sender.Payloads[0];
+                skip += 2;
+            }
+            var pName = _pluginInterface.ClientState.LocalPlayer.Name;
+            if (sender.Payloads[0+skip].Type == PayloadType.Player)
+            {
+                var pPayload = (PlayerPayload) sender.Payloads[0+skip];
                 pName = pPayload.PlayerName;
             }
 
-            if (sender.Payloads[0].Type == PayloadType.Icon && sender.Payloads[1].Type == PayloadType.Player)
+            if (sender.Payloads[0+skip].Type == PayloadType.Icon && sender.Payloads[1].Type == PayloadType.Player)
             {
                 var pPayload = (PlayerPayload) sender.Payloads[1];
                 pName = pPayload.PlayerName;
@@ -254,9 +259,9 @@ namespace ChatBubbles
 
             if (type == XivChatType.StandardEmote || type == XivChatType.CustomEmote)
             {
-                if (cmessage.Payloads[0].Type == PayloadType.Player)
+                if (cmessage.Payloads[0+skip].Type == PayloadType.Player)
                 {
-                    var pPayload = (PlayerPayload) cmessage.Payloads[0];
+                    var pPayload = (PlayerPayload) cmessage.Payloads[0+skip];
                     pName = pPayload.PlayerName;
                 }
 
@@ -408,6 +413,16 @@ namespace ChatBubbles
                     SaveConfig();
                     _config = false;
                 }
+                ImGui.SameLine();
+                ImGui.PushStyleColor(ImGuiCol.Button, 0xFF000000 | 0x005E5BFF);
+                ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0xDD000000 | 0x005E5BFF);
+                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0xAA000000 | 0x005E5BFF);
+
+                if (ImGui.Button("Buy Haplo a Hot Chocolate"))
+                {
+                    System.Diagnostics.Process.Start("https://ko-fi.com/haplo");
+                }
+                ImGui.PopStyleColor(3);
 
                 ImGui.End();
             }

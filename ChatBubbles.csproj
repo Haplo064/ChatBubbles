@@ -2,7 +2,7 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{54DABD23-C423-4A06-A956-373458B588BA}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -33,20 +33,25 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Dalamud, Version=5.2.4.6, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\..\AppData\Roaming\XIVLauncher\addon\Hooks\5.2.4.6\Dalamud.dll</HintPath>
+    <Reference Include="Dalamud">
+      <Private>False</Private>
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
     </Reference>
-    <Reference Include="ImGui.NET, Version=1.72.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\..\AppData\Roaming\XIVLauncher\addon\Hooks\5.2.4.6\ImGui.NET.dll</HintPath>
+    <Reference Include="ImGui.NET">
+      <Private>False</Private>
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\dev\ImGui.NET.dll</HintPath>
     </Reference>
-    <Reference Include="ImGuiScene, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\..\AppData\Roaming\XIVLauncher\addon\Hooks\5.2.4.6\ImGuiScene.dll</HintPath>
+    <Reference Include="ImGuiScene">
+      <Private>False</Private>
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\dev\ImGuiScene.dll</HintPath>
     </Reference>
-    <Reference Include="Lumina, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\..\AppData\Roaming\XIVLauncher\addon\Hooks\5.2.4.6\Lumina.dll</HintPath>
+    <Reference Include="Lumina">
+      <Private>False</Private>
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\dev\Lumina.dll</HintPath>
     </Reference>
-    <Reference Include="Lumina.Excel, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\..\AppData\Roaming\XIVLauncher\addon\Hooks\5.2.4.6\Lumina.Excel.dll</HintPath>
+    <Reference Include="Lumina.Excel">
+      <Private>False</Private>
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\dev\Lumina.Excel.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
