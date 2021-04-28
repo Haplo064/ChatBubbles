@@ -28,6 +28,7 @@ namespace ChatBubbles
         private UiColorPick _chooser;
         private int _queue;
         private bool _stack;
+        private bool _hide;
 
 #if DEBUG
         private bool _config = true;
@@ -91,6 +92,7 @@ namespace ChatBubbles
             _textColour = _configuration.TextColour;
             _queue = _configuration.Queue;
             _stack = _configuration.Stack;
+            _hide = _configuration.Hide;
 
             _pluginInterface.Framework.Gui.Chat.OnChatMessage += Chat_OnChatMessage;
             _pluginInterface.UiBuilder.OnBuildUi += BubbleConfigUi;
@@ -130,6 +132,7 @@ namespace ChatBubbles
             _configuration.TextColour = _textColour;
             _configuration.Queue = _queue;
             _configuration.Stack = _stack;
+            _configuration.Hide = _hide;
             _pluginInterface.SavePluginConfig(_configuration);
         }
 
@@ -344,6 +347,10 @@ namespace ChatBubbles
 
         private int GetActorId(string nameInput)
         {
+            if (_hide)
+            {
+                if (nameInput == _pluginInterface.ClientState.LocalPlayer.Name) return 0;
+            }
             foreach (var t in _pluginInterface.ClientState.Actors)
             {
                 if (!(t is PlayerCharacter pc)) continue;
@@ -371,6 +378,9 @@ namespace ChatBubbles
                 ImGui.Checkbox("Stack Messages", ref _stack);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Instead of queueing bubbles, this option instead 'stacks' them inside the one bubble."); }
+                ImGui.Checkbox("Hide Yours", ref _hide);
+                ImGui.SameLine();
+                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Hides your character's bubble."); }
                 var i = 0;
                 ImGui.Text("Enabled channels:");
                 ImGui.SameLine();
@@ -487,6 +497,7 @@ namespace ChatBubbles
             public DateTime dateTime;
             public string name;
             public bool Stack { get; set; }
+            public bool Hide { get; set; }
         }
     }
 
