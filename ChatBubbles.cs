@@ -497,7 +497,6 @@ namespace ChatBubbles
             public DateTime dateTime;
             public string name;
             public bool Stack { get; set; }
-            public bool Hide { get; set; }
         }
     }
 
@@ -513,6 +512,7 @@ namespace ChatBubbles
         public List<XivChatType> Channels { get; set; } = new List<XivChatType>();
         public int Timer { get; set; } = 7;
         public bool Stack { get; set; }
+        public bool Hide { get; set; }
 
         public UiColorPick[] TextColour { get; set; } =
         {
