@@ -36,6 +36,7 @@ namespace ChatBubbles
         private UiColorPick _chooser;
         private int _queue;
         private bool _stack;
+        private bool _hide;
 
 #if DEBUG
         private bool _config = true;
@@ -153,6 +154,7 @@ namespace ChatBubbles
             _configuration.TextColour = _textColour;
             _configuration.Queue = _queue;
             _configuration.Stack = _stack;
+            _configuration.Hide = _hide;
             _pluginInterface.SavePluginConfig(_configuration);
         }
 
@@ -235,6 +237,8 @@ namespace ChatBubbles
 
         private uint GetActorId(string nameInput)
         {
+            if (_hide && nameInput == _clientState.LocalPlayer.Name.TextValue) return 0;
+
             foreach (var t in _objectTable)
             {
                 if (!(t is PlayerCharacter pc)) continue;
@@ -284,6 +288,7 @@ namespace ChatBubbles
         public List<XivChatType> Channels { get; set; } = new() {XivChatType.Say};
         public int Timer { get; set; } = 7;
         public bool Stack { get; set; }
+        public bool Hide { get; set; }
 
         public UiColorPick[] TextColour { get; set; } =
         {

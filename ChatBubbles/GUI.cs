@@ -26,6 +26,9 @@ namespace ChatBubbles
                 ImGui.Checkbox("Stack Messages", ref _stack);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Instead of queueing bubbles, this option instead 'stacks' them inside the one bubble."); }
+                ImGui.Checkbox("Hide Your Chat", ref _hide);
+                ImGui.SameLine();
+                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Hides your character's bubble."); }
                 var i = 0;
                 ImGui.Text("Enabled channels:");
                 ImGui.SameLine();
@@ -63,6 +66,8 @@ namespace ChatBubbles
 
                 ImGui.Columns(1);
 
+                ImGui.Text("Shoutout to Lanselotto and Pastah for some additional ideas and code.");
+                
                 if (ImGui.Button("Save and Close Config"))
                 {
                     SaveConfig();
