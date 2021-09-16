@@ -68,11 +68,20 @@ namespace ChatBubbles
                 add += _timer;
                 update++;
 
-                if (!_stack) continue;
+                if (_bubbleFunctionality == 0) continue;
+                
+                switch (_bubbleFunctionality) {
+                    case 1: // stack
+                        cd.Message.Append(nline);
+                        cd.Message.Append(fmessage);
+                        break;
+                    case 2: // replace
+                        cd.Message = nline;
+                        cd.Message = fmessage;
+                        break;
+                }
                 update = 99999;
-                cd.Message.Append(nline);
-                cd.Message.Append(fmessage);
-                cd.Stack = true;
+                cd.NewMessage = true;
                 cd.MessageDateTime = DateTime.Now;
             }
 

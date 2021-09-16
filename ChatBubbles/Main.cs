@@ -35,7 +35,7 @@ namespace ChatBubbles
         private int _timer;
         private UiColorPick _chooser;
         private int _queue;
-        private bool _stack;
+        private int _bubbleFunctionality;
         private bool _hide;
 
 #if DEBUG
@@ -113,7 +113,7 @@ namespace ChatBubbles
             _channels = _configuration.Channels;
             _textColour = _configuration.TextColour;
             _queue = _configuration.Queue;
-            _stack = _configuration.Stack;
+            _bubbleFunctionality = _configuration.BubbleFunctionality;
 
             _chatGui.ChatMessage += Chat_OnChatMessage;
             _pluginInterface.UiBuilder.Draw += BubbleConfigUi;
@@ -153,7 +153,7 @@ namespace ChatBubbles
             _configuration.Channels = _channels;
             _configuration.TextColour = _textColour;
             _configuration.Queue = _queue;
-            _configuration.Stack = _stack;
+            _configuration.BubbleFunctionality = _bubbleFunctionality;
             _configuration.Hide = _hide;
             _pluginInterface.SavePluginConfig(_configuration);
         }
@@ -177,11 +177,11 @@ namespace ChatBubbles
                     bubble->Timer = _timer;
                 }
 
-                if (bubble->Status == SeBubbleStatus.On && cd.Stack)
+                if (bubble->Status == SeBubbleStatus.On && cd.NewMessage)
                 {
                     bubble->Status = SeBubbleStatus.Off;
                     bubble->Timer = 0;
-                    cd.Stack = false;
+                    cd.NewMessage = false;
                 }
                 break;
             }
@@ -272,7 +272,7 @@ namespace ChatBubbles
             public uint ActorId;
             public DateTime MessageDateTime;
             public string Name;
-            public bool Stack { get; set; }
+            public bool NewMessage { get; set; }
         }
     }
 
@@ -287,7 +287,7 @@ namespace ChatBubbles
         public int Version { get; set; } = 0;
         public List<XivChatType> Channels { get; set; } = new() {XivChatType.Say};
         public int Timer { get; set; } = 7;
-        public bool Stack { get; set; }
+        public int BubbleFunctionality { get; set; } = 0;
         public bool Hide { get; set; }
 
         public UiColorPick[] TextColour { get; set; } =

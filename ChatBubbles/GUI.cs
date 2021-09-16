@@ -12,20 +12,34 @@ namespace ChatBubbles
         {
             if (_config)
             {
-                ImGui.SetNextWindowSizeConstraints(new Num.Vector2(620, 640), new Num.Vector2(1920, 1080));
+                ImGui.SetNextWindowSizeConstraints(new Num.Vector2(620, 650), new Num.Vector2(1920, 1080));
                 ImGui.Begin("Chat Bubbles Config", ref _config);
                 ImGui.InputInt("Bubble Timer", ref _timer);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("How long the bubble will last on screen."); }
-                ImGui.InputInt("Maximum Bubble Queue", ref _queue);
-                ImGui.SameLine();
-                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("How many bubbles can be queued to be seen per person."); }
+
                 ImGui.Checkbox("Debug Logging", ref _debug);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Enable logging for debug purposes.\nOnly enable if you are going to share the `dalamud.txt` file in discord."); }
-                ImGui.Checkbox("Stack Messages", ref _stack);
+                ImGui.RadioButton("Queue", ref _bubbleFunctionality, 0);
                 ImGui.SameLine();
-                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Instead of queueing bubbles, this option instead 'stacks' them inside the one bubble."); }
+                ImGui.RadioButton("Stack", ref _bubbleFunctionality, 1);
+                ImGui.SameLine();
+                ImGui.RadioButton("Replace", ref _bubbleFunctionality, 2);
+                ImGui.SameLine();
+                ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("How do you want bubbles to function?\nQueue messages, stack messages, or insta-replace messages?"); }
+
+                if (_bubbleFunctionality == 0)
+                {
+                    ImGui.InputInt("Maximum Bubble Queue", ref _queue);
+                    ImGui.SameLine();
+                    ImGui.Text("(?)");
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip("How many bubbles can be queued to be seen per person.");
+                    }
+                }
+
                 ImGui.Checkbox("Hide Your Chat", ref _hide);
                 ImGui.SameLine();
                 ImGui.Text("(?)"); if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Hides your character's bubble."); }
