@@ -28,7 +28,8 @@ namespace ChatBubbles
             var isEmoteType = type is XivChatType.CustomEmote or XivChatType.StandardEmote;
             if (isEmoteType)
             {
-                playerPayload = cmessage.Payloads.FirstOrDefault(x => x is PlayerPayload) as PlayerPayload;
+                //Only need this for standard emotes. It breaks custom emotes.
+                if (type is XivChatType.StandardEmote) playerPayload = cmessage.Payloads.FirstOrDefault(x => x is PlayerPayload) as PlayerPayload;
                 fmessage.Payloads.Insert(0, new EmphasisItalicPayload(true));
                 fmessage.Payloads.Add(new EmphasisItalicPayload(false));
             }
