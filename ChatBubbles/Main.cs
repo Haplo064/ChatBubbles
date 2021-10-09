@@ -114,6 +114,7 @@ namespace ChatBubbles
             _textColour = _configuration.TextColour;
             _queue = _configuration.Queue;
             _bubbleFunctionality = _configuration.BubbleFunctionality;
+            _hide = _configuration.Hide;
 
             _chatGui.ChatMessage += Chat_OnChatMessage;
             _pluginInterface.UiBuilder.Draw += BubbleConfigUi;
