@@ -22,14 +22,23 @@ namespace ChatBubbles
             var nline = new SeString(new List<Payload>());
             nline.Payloads.Add(new TextPayload("\n"));
             fmessage.Append(cmessage);
-            
+
             //Stolen from Dragon (SheepGoMeh)
-            var playerPayload = sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload;
+            PlayerPayload playerPayload;
+
+            if (sender.ToString() == _clientState.LocalPlayer.Name.TextValue) 
+            {
+                //We already know the sender is the local player.
+                playerPayload = new PlayerPayload(_clientState.LocalPlayer.Name.TextValue, _clientState.LocalPlayer.HomeWorld.Id); 
+            }
+            else 
+            { 
+                playerPayload = sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload ?? cmessage.Payloads.FirstOrDefault(x => x is PlayerPayload) as PlayerPayload;
+            }
+
             var isEmoteType = type is XivChatType.CustomEmote or XivChatType.StandardEmote;
             if (isEmoteType)
             {
-                //Only need this for standard emotes. It breaks custom emotes.
-                if (type is XivChatType.StandardEmote) playerPayload = cmessage.Payloads.FirstOrDefault(x => x is PlayerPayload) as PlayerPayload;
                 fmessage.Payloads.Insert(0, new EmphasisItalicPayload(true));
                 fmessage.Payloads.Add(new EmphasisItalicPayload(false));
             }
