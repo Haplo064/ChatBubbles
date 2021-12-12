@@ -14,15 +14,29 @@ using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Gui;
 using Dalamud.Logging;
-using Num = System.Numerics;
 using Lumina.Excel.GeneratedSheets;
+using ImGuiNET;
+using System.Numerics;
 
 namespace ChatBubbles
 {
+    internal class UIColorComparer : IEqualityComparer<UIColor>
+    {
+        public bool Equals(UIColor x, UIColor y)
+        {
+            return x?.UIForeground == y?.UIForeground; // based on variable i
+        }
+        public int GetHashCode(UIColor obj)
+        {
+            return obj.UIForeground.GetHashCode(); // hashcode of variable to compare
+        }
+    }
+
     public unsafe partial class ChatBubbles : IDalamudPlugin
     {
         public string Name => "Chat Bubbles";
         private readonly DalamudPluginInterface _pluginInterface;
+        private readonly List<UIColor> _uiColours;
         private readonly Config _configuration;
         private readonly CommandManager _commandManager;
         private readonly ClientState _clientState;
@@ -88,7 +102,7 @@ namespace ChatBubbles
         private readonly Hook<OpenBubble> _openBubbleFuncHook;
         //private IntPtr _openBubblePtr;
 
-        private readonly Lumina.Excel.ExcelSheet<UIColor> _uiColours;
+        //private readonly Lumina.Excel.ExcelSheet<UIColor> _uiColours;
 
         public ChatBubbles(
             DalamudPluginInterface pluginInterface,
@@ -106,14 +120,34 @@ namespace ChatBubbles
             _chatGui = chatGui;
             _objectTable = objectTable;
             var sigScanner = sigScannerD;
-            
-            _uiColours = dataManager.Excel.GetSheet<UIColor>();
+
+            var list = new List<UIColor>(dataManager.Excel.GetSheet<UIColor>()!.Distinct(new UIColorComparer()));
+            list.Sort((a, b) =>
+            {
+                var colorA = ConvertUIColorToColor(a);
+                var colorB = ConvertUIColorToColor(b);
+                ImGui.ColorConvertRGBtoHSV(colorA.X, colorA.Y, colorA.Z, out var aH, out var aS, out var aV);
+                ImGui.ColorConvertRGBtoHSV(colorB.X, colorB.Y, colorB.Z, out var bH, out var bS, out var bV);
+
+                var hue = aH.CompareTo(bH);
+                if (hue != 0) { return hue; }
+
+                var saturation = aS.CompareTo(bS);
+                if (saturation != 0) { return saturation; }
+
+                var value = aV.CompareTo(bV);
+                return value != 0 ? value : 0;
+            });
+            _uiColours = list;
+
+            //_uiColours = dataManager.Excel.GetSheet<UIColor>();
             _configuration = pluginInterface.GetPluginConfig() as Config ?? new Config();
             _timer = _configuration.Timer;
             _channels = _configuration.Channels;
             _textColour = _configuration.TextColour;
             _queue = _configuration.Queue;
             _bubbleFunctionality = _configuration.BubbleFunctionality;
+            _hide = _configuration.Hide;
 
             _chatGui.ChatMessage += Chat_OnChatMessage;
             _pluginInterface.UiBuilder.Draw += BubbleConfigUi;
@@ -145,7 +179,15 @@ namespace ChatBubbles
             catch (Exception e)
             { PluginLog.Log("BAD\n" + e); }
         }
-        
+
+        private Vector4 ConvertUIColorToColor(UIColor uiColor)
+        {
+            var temp = BitConverter.GetBytes(uiColor.UIForeground);
+            return new Vector4((float)temp[3] / 255,
+                (float)temp[2] / 255,
+                (float)temp[1] / 255,
+                (float)temp[0] / 255);
+        }
 
         private void SaveConfig()
         {
