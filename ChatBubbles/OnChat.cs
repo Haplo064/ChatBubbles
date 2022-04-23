@@ -26,7 +26,7 @@ namespace ChatBubbles
             //Stolen from Dragon (SheepGoMeh)
             PlayerPayload playerPayload;
 
-            if (sender.ToString() == _clientState.LocalPlayer.Name.TextValue)
+            if (sender.ToString() == _clientState.LocalPlayer?.Name.TextValue)
             {
                 //We already know the sender is the local player.
                 playerPayload = new PlayerPayload(_clientState.LocalPlayer.Name.TextValue, _clientState.LocalPlayer.HomeWorld.Id);
@@ -42,8 +42,8 @@ namespace ChatBubbles
                 fmessage.Payloads.Add(new EmphasisItalicPayload(false));
             }
 
-            var pName = playerPayload == default(PlayerPayload) ? _clientState.LocalPlayer.Name.TextValue : playerPayload.PlayerName;
-            var actr = GetActorId(pName);
+            var pName = playerPayload == default(PlayerPayload) ? _clientState.LocalPlayer?.Name.TextValue : playerPayload.PlayerName;
+            var actr = GetActorId(pName ?? "");
 
             if (_debug)
             {
@@ -55,8 +55,8 @@ namespace ChatBubbles
 
             if (type == XivChatType.TellOutgoing)
             {
-                actr = _clientState.LocalPlayer.ObjectId;
-                pName = _clientState.LocalPlayer.Name.TextValue;
+                actr = _clientState.LocalPlayer?.ObjectId ?? 0;
+                pName = _clientState.LocalPlayer?.Name.TextValue;
             }
 
             fmessage.Payloads.Insert(0,
@@ -81,8 +81,8 @@ namespace ChatBubbles
                 
                 switch (_bubbleFunctionality) {
                     case 1: // stack
-                        cd.Message.Append(nline);
-                        cd.Message.Append(fmessage);
+                        cd.Message?.Append(nline);
+                        cd.Message?.Append(fmessage);
                         break;
                     case 2: // replace
                         cd.Message = nline;
@@ -103,7 +103,7 @@ namespace ChatBubbles
                     ActorId = actr,
                     MessageDateTime = DateTime.Now,
                     Message = fmessage,
-                    Name = pName,
+                    Name = pName ?? "",
                 });
             }
             else
@@ -120,7 +120,7 @@ namespace ChatBubbles
                     ActorId = actr,
                     MessageDateTime = DateTime.Now.Add(time),
                     Message = fmessage,
-                    Name = pName,
+                    Name = pName ?? "",
                 });
             }
         }
