@@ -1,7 +1,7 @@
 <Project>
     <Target Name="PackagePlugin"
             AfterTargets="Build"
-            Condition="'$(Configuration)' == 'Release Illegal' or '$(Configuration)' == 'Release Official'">
+            Condition="'$(Configuration)' == 'Release'">
         <DalamudPackager ProjectDir="$(ProjectDir)"
                          OutputPath="$(OutputPath)"
                          AssemblyName="$(AssemblyName)"
