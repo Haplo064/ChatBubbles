@@ -22,7 +22,7 @@ namespace ChatBubbles
 {
     internal class UIColorComparer : IEqualityComparer<UIColor>
     {
-        public bool Equals(UIColor x, UIColor y)
+        public bool Equals(UIColor ?x, UIColor ?y)
         {
             return x?.UIForeground == y?.UIForeground; // based on variable i
         }
@@ -168,7 +168,7 @@ namespace ChatBubbles
             catch (Exception e)
             { PluginLog.Log("BAD\n" + e); }
 
-            var openBubblePtr = sigScanner.ScanText("E8 ?? ?? ?? ?? 80 BF ?? ?? ?? ?? ?? C7 07 ?? ?? ?? ??");
+            var openBubblePtr = sigScanner.ScanText("E8 ?? ?? ?? ?? F6 86 ?? ?? ?? ?? ?? C7 46 ?? ?? ?? ?? ??");
             OpenBubble openBubbleFunc = OpenBubbleFuncFunc;
             try
             {
@@ -241,10 +241,10 @@ namespace ChatBubbles
                 if (_debug)
                 {
                     PluginLog.Log("Update ballon text");
-                    PluginLog.Log(cd.Message.TextValue);
+                    PluginLog.Log(cd.Message?.TextValue ?? "");
                 }
 
-                if (cd.Message.TextValue.Length > 0)
+                if (cd.Message?.TextValue.Length > 0)
                 {
                     var bytes = cd.Message.Encode();
                     var newPointer = Marshal.AllocHGlobal(bytes.Length + 1);
@@ -279,7 +279,7 @@ namespace ChatBubbles
 
         private uint GetActorId(string nameInput)
         {
-            if (_hide && nameInput == _clientState.LocalPlayer.Name.TextValue) return 0;
+            if (_hide && nameInput == _clientState.LocalPlayer?.Name.TextValue) return 0;
 
             foreach (var t in _objectTable)
             {
@@ -310,10 +310,10 @@ namespace ChatBubbles
 
         private class CharData
         {
-            public SeString Message;
+            public SeString ?Message;
             public uint ActorId;
             public DateTime MessageDateTime;
-            public string Name;
+            public string  ?Name;
             public bool NewMessage { get; set; }
         }
     }
