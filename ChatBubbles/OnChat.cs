@@ -21,20 +21,27 @@ namespace ChatBubbles
             var fmessage = new SeString(new List<Payload>());
             var nline = new SeString(new List<Payload>());
             nline.Payloads.Add(new TextPayload("\n"));
-            fmessage.Append(cmessage);
+            
 
             //Stolen from Dragon (SheepGoMeh)
             PlayerPayload playerPayload;
 
-            if (sender.ToString() == _clientState.LocalPlayer.Name.TextValue)
+            if (sender.ToString() == _clientState.LocalPlayer?.Name.TextValue)
             {
-                //We already know the sender is the local player.
                 playerPayload = new PlayerPayload(_clientState.LocalPlayer.Name.TextValue, _clientState.LocalPlayer.HomeWorld.Id);
+                if (type == XivChatType.CustomEmote)
+                {
+                    var playerName = new SeString(new List<Payload>());
+                    playerName.Payloads.Add(new TextPayload(_clientState.LocalPlayer.Name.TextValue));
+                    fmessage.Append(playerName);
+                }
             }
             else
             {
                 playerPayload = sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload ?? cmessage.Payloads.FirstOrDefault(x => x is PlayerPayload) as PlayerPayload;
             }
+            
+            fmessage.Append(cmessage);
             var isEmoteType = type is XivChatType.CustomEmote or XivChatType.StandardEmote;
             if (isEmoteType)
             {
@@ -51,6 +58,11 @@ namespace ChatBubbles
                 PluginLog.Log($"Sender={pName}");
                 PluginLog.Log($"Message Raw={cmessage.TextValue}");
                 PluginLog.Log($"ActorID={actr}");
+                PluginLog.Log($"--------------");
+                foreach (Payload x in cmessage.Payloads)
+                {
+                    PluginLog.Log($"TYPE: {x.Type}");
+                }
             }
 
             if (type == XivChatType.TellOutgoing)
@@ -81,12 +93,23 @@ namespace ChatBubbles
                 
                 switch (_bubbleFunctionality) {
                     case 1: // stack
-                        cd.Message.Append(nline);
-                        cd.Message.Append(fmessage);
+                        cd.Message?.Append(nline);
+                        cd.Message?.Append(fmessage);
                         break;
                     case 2: // replace
                         cd.Message = nline;
                         cd.Message = fmessage;
+                        break;
+                    case 3: // Sensible
+                        if (type == cd.Type)
+                        {
+                            cd.Message?.Append(nline);
+                            cd.Message?.Append(fmessage);
+                        }
+                        else
+                        {
+                            continue;
+                        }
                         break;
                 }
                 update = 99999;
@@ -104,6 +127,7 @@ namespace ChatBubbles
                     MessageDateTime = DateTime.Now,
                     Message = fmessage,
                     Name = pName,
+                    Type = type
                 });
             }
             else
@@ -121,6 +145,7 @@ namespace ChatBubbles
                     MessageDateTime = DateTime.Now.Add(time),
                     Message = fmessage,
                     Name = pName,
+                    Type = type
                 });
             }
         }
