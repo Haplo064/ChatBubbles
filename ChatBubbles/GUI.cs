@@ -24,14 +24,6 @@ namespace ChatBubbles
         
         private void BubbleConfigUi()
         {
-            var log = (AgentScreenLog*)Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentByInternalId(AgentId.ScreenLog);
-            if (bubbleNumber != (int)log->BalloonQueue.MySize)
-            {
-                //SO CLOSE
-                //updateBubbleID(bubbleNumber - (int)log->BalloonQueue.MySize);
-                bubbleNumber = (int)log->BalloonQueue.MySize;
-            }
-            
             if (_config)
             {
                 ImGui.SetNextWindowSizeConstraints(new Num.Vector2(620, 650), new Num.Vector2(1920, 1080));
@@ -39,17 +31,13 @@ namespace ChatBubbles
 
                 if (_debug)
                 {
-
                     for (int y = 0; y < 10; y++)
                     {
                         try
                         {
-                            
                             var temp = slotsArrayPos(_charDatas[y].BubbleNumber);
                             ImGui.Text(
-                                $"i: {y} | A: {bubbleActive[9 - y]} | ID: {slots[9 - temp].ID} | BN: {_charDatas[y].BubbleNumber} | {_charDatas[y].Message}");
-                            
- 
+                                $"i: {y} | A: {bubbleActive[9 - temp]} | ID: {slots[9 - temp].ID} | BN: {_charDatas[y].BubbleNumber} | {_charDatas[y].Message}");
                         }
                         catch (Exception e)
                         {
@@ -61,19 +49,13 @@ namespace ChatBubbles
                     {
                         try
                         {
-                            ImGui.Text($"[{z}] | [{slots[z].ID}] |A: {bubbleActive[z]}");
+                            ImGui.Text($"[{z}] | [{slots[z].ID}] |A: {bubbleActive[z]} | A2: {slots[z].Active}");
                         }
                         catch (Exception e)
                         {
                             //lol
                         }
                     }
-
-                    ImGui.Text($"{log->BalloonQueue.MySize}");
-
-
-
-
                 }
                 
                 ImGui.InputInt("Bubble Timer", ref _timer);
@@ -260,56 +242,6 @@ namespace ChatBubbles
                 if (!((DateTime.Now - _charDatas[i].MessageDateTime).TotalMilliseconds > (_timer * 950))) continue;
                 _charDatas.RemoveAt(i);
                 i--;
-            }
-            
-            var bubblesAtk = new AtkResNode*[10];
-            var addonPtr = IntPtr.Zero;
-            addonPtr =  Svc.gameGui.GetAddonByName("_MiniTalk",1);
-            if (addonPtr != IntPtr.Zero)
-            {
-                AtkUnitBase* miniTalk2 = (AtkUnitBase*) addonPtr;
-                _listOfBubbles = miniTalk2->RootNode;
-                bubblesAtk[0] = _listOfBubbles->ChildNode;
-                for (int k = 1; k < 10; k++)
-                {
-                    try
-                    {
-                        //CHECK IF BEING USED ATM
-                        if (bubbleActive[k + 1])
-                        {
-                            //PluginLog.Log($"CHECKING {k + 1}: ACTIVE");
-                            continue;
-                        }
-
-                        //PluginLog.Log($"CHECKING {k + 1}: IN-ACTIVE, RESETTING");
-                        bubblesAtk[k] = bubblesAtk[k - 1]->PrevSiblingNode;
-                        bubblesAtk[k]->AddRed = 0;
-                        bubblesAtk[k]->AddBlue = 0;
-                        bubblesAtk[k]->AddGreen = 0;
-                        bubblesAtk[k]->ScaleX = defaultScale;
-                        bubblesAtk[k]->ScaleY = defaultScale;
-                        var resNodeNineGrid = ((AtkComponentNode*) bubblesAtk[k])->Component->UldManager
-                            .SearchNodeById(5);
-                        var resNodeDangly = ((AtkComponentNode*) bubblesAtk[k])->Component->UldManager
-                            .SearchNodeById(4);
-
-                        resNodeDangly->Color.R = (byte) (255);
-                        resNodeDangly->Color.G = (byte) (255);
-                        resNodeDangly->Color.B = (byte) (255);
-                        resNodeNineGrid->Color.R = (byte) (255);
-                        resNodeNineGrid->Color.G = (byte) (255);
-                        resNodeNineGrid->Color.B = (byte) (255);
-                    }
-                    catch (Exception e)
-                    {
-                        //lol
-                    }
-                }
-            }
-            //PluginLog.Log("CLEANUP LOG");
-            for (int u = 1; u < 11; u++)
-            {
-                bubbleActive[u] = false;
             }
         }
     }

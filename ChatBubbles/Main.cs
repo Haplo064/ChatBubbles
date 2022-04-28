@@ -111,6 +111,7 @@ namespace ChatBubbles
         private int bubbleNumber = 0;
 
         private bool[] bubbleActive = {false, false, false, false, false, false, false, false, false, false, false};
+        private XivChatType[] bubbleActiveType = {XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug};
 
         private BalloonSlotState[] slots = new BalloonSlotState[10];
         private AtkResNode*[] bubblesAtk = new AtkResNode*[10];
@@ -171,6 +172,7 @@ namespace ChatBubbles
             _uiColours = list;
 
 
+            Svc.framework.Update += OnceUponAFrame;
             Svc.chatGui.ChatMessage += Chat_OnChatMessage;
             Svc.pluginInterface.UiBuilder.Draw += BubbleConfigUi;
             Svc.pluginInterface.UiBuilder.OpenConfigUi += BubbleConfig;
@@ -375,7 +377,6 @@ namespace ChatBubbles
                         {
                             bubble->PlayTimer = (float)(_timer * val);
                         }
-                        
                     }
                     else
                     {
@@ -399,69 +400,17 @@ namespace ChatBubbles
                         bubblesAtk[0] = _listOfBubbles->ChildNode;
                         for (int k = 1; k < 10; k++)
                         {
+                            //Previous sibling linked list failing??
                             bubblesAtk[k] = bubblesAtk[k - 1]->PrevSiblingNode;
-                        }
-                        for (int i = 0; i < 10; i++)
-                        {
-                            if (bubblesAtk[i]->IsVisible)
+                            if (bubblesAtk[k]->IsVisible)
                             {
-                                
-                                var temp = slotsArrayPos(cd.BubbleNumber);
-                                if (cd.BubbleNumber == slots[9-temp].ID && i + temp == 9)
+                                //Check failing?
+                                PluginLog.Log($"Checking if: {k + slotsArrayPos(cd.BubbleNumber)} = 9");
+                                if (k + slotsArrayPos(cd.BubbleNumber) == 9)
                                 {
-                                    
-                                    //PluginLog.Log($"BN: {cd.BubbleNumber} == {slots[9-temp].ID} for loop: {i}");
-                                    //Trying to lock down the jiggle for own bubbles :|
-                                    /*
-                                    try
-                                    {
-                                        if (cd.Name==Svc.clientState.LocalPlayer?.Name.TextValue)
-                                        {
-                                            if (_playerBubble != i)
-                                            {
-                                                PluginLog.Log($"Locking at {i}, with X being {(int)bubblesAtk[i]->X}");
-                                                _playerBubble = i;
-                                                _playerBubbleX = (int)bubblesAtk[i]->X;
-                                                PluginLog.Log($"Locked at {_playerBubble} | {_playerBubbleX}");
-                                            }
-
-                                            if (_selfLock)
-                                            {
-                                                PluginLog.Log($"X is currently: {bubblesAtk[i]->X}");
-                                                bubblesAtk[i]->X=_playerBubbleX;
-                                                PluginLog.Log($"X is now: {bubblesAtk[i]->X}");
-                                            }
-                                        }
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        PluginLog.Verbose($"{e}");
-                                        throw;
-                                    }
-                                    */
-                                    
-                                    var resNodeNineGrid = ((AtkComponentNode*) bubblesAtk[i])->Component->UldManager
-                                        .SearchNodeById(5);
-                                    var resNodeDangly = ((AtkComponentNode*) bubblesAtk[i])->Component->UldManager
-                                        .SearchNodeById(4);
-                                    var colour = GetBubbleColour(cd.Type);
-                                    var colour2 = GetBubbleColour2(cd.Type);
-
-                                    bubbleActive[i] = true;
+                                    bubbleActive[k] = true;
+                                    bubbleActiveType[k] = cd.Type;
                                     counter++;
-                                    PluginLog.Log($"Changing BUBBLE AT: {i} | [{counter}]");
-                                    resNodeDangly->Color.R = (byte) (colour.X * 255);
-                                    resNodeDangly->Color.G = (byte) (colour.Y * 255);
-                                    resNodeDangly->Color.B = (byte) (colour.Z * 255);
-                                    resNodeNineGrid->Color.R = (byte) (colour.X * 255);
-                                    resNodeNineGrid->Color.G = (byte) (colour.Y * 255);
-                                    resNodeNineGrid->Color.B = (byte) (colour.Z * 255);
-                                    bubblesAtk[i]->AddRed = (ushort) (colour2.X * 255);
-                                    bubblesAtk[i]->AddGreen = (ushort) (colour2.Y * 255);
-                                    bubblesAtk[i]->AddBlue = (ushort) (colour2.Z * 255);
-                                    bubblesAtk[i]->ScaleX = _bubbleSize;
-                                    bubblesAtk[i]->ScaleY = _bubbleSize;
-                                    
                                 }
                             }
                         }
