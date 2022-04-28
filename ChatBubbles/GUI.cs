@@ -27,8 +27,8 @@ namespace ChatBubbles
             var log = (AgentScreenLog*)Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentByInternalId(AgentId.ScreenLog);
             if (bubbleNumber != (int)log->BalloonQueue.MySize)
             {
-
-                updateBubbleID(bubbleNumber - (int)log->BalloonQueue.MySize);
+                //SO CLOSE
+                //updateBubbleID(bubbleNumber - (int)log->BalloonQueue.MySize);
                 bubbleNumber = (int)log->BalloonQueue.MySize;
             }
             
@@ -44,8 +44,12 @@ namespace ChatBubbles
                     {
                         try
                         {
+                            
+                            var temp = slotsArrayPos(_charDatas[y].BubbleNumber);
                             ImGui.Text(
-                                $"i: {y} | A: {bubbleActive[9 - y]} | ID: {slots[9 - y].ID} | BN: {_charDatas[y].BubbleNumber} | {_charDatas[y].Message}");
+                                $"i: {y} | A: {bubbleActive[9 - y]} | ID: {slots[9 - temp].ID} | BN: {_charDatas[y].BubbleNumber} | {_charDatas[y].Message}");
+                            
+ 
                         }
                         catch (Exception e)
                         {
@@ -57,7 +61,7 @@ namespace ChatBubbles
                     {
                         try
                         {
-                            ImGui.Text($"ID: {slots[z].ID}");
+                            ImGui.Text($"[{z}] | [{slots[z].ID}] |A: {bubbleActive[z]}");
                         }
                         catch (Exception e)
                         {
@@ -260,7 +264,7 @@ namespace ChatBubbles
             
             var bubblesAtk = new AtkResNode*[10];
             var addonPtr = IntPtr.Zero;
-            addonPtr =  _gameGui.GetAddonByName("_MiniTalk",1);
+            addonPtr =  Svc.gameGui.GetAddonByName("_MiniTalk",1);
             if (addonPtr != IntPtr.Zero)
             {
                 AtkUnitBase* miniTalk2 = (AtkUnitBase*) addonPtr;
@@ -273,11 +277,11 @@ namespace ChatBubbles
                         //CHECK IF BEING USED ATM
                         if (bubbleActive[k + 1])
                         {
-                            PluginLog.Log($"CHECKING {k + 1}: ACTIVE");
+                            //PluginLog.Log($"CHECKING {k + 1}: ACTIVE");
                             continue;
                         }
 
-                        PluginLog.Log($"CHECKING {k + 1}: IN-ACTIVE, RESETTING");
+                        //PluginLog.Log($"CHECKING {k + 1}: IN-ACTIVE, RESETTING");
                         bubblesAtk[k] = bubblesAtk[k - 1]->PrevSiblingNode;
                         bubblesAtk[k]->AddRed = 0;
                         bubblesAtk[k]->AddBlue = 0;
@@ -302,7 +306,7 @@ namespace ChatBubbles
                     }
                 }
             }
-            PluginLog.Log("CLEANUP LOG");
+            //PluginLog.Log("CLEANUP LOG");
             for (int u = 1; u < 11; u++)
             {
                 bubbleActive[u] = false;

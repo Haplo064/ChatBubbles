@@ -26,13 +26,13 @@ namespace ChatBubbles
             //Stolen from Dragon (SheepGoMeh)
             PlayerPayload playerPayload;
 
-            if (sender.ToString() == _clientState.LocalPlayer?.Name.TextValue)
+            if (sender.ToString() == Svc.clientState.LocalPlayer?.Name.TextValue)
             {
-                playerPayload = new PlayerPayload(_clientState.LocalPlayer.Name.TextValue, _clientState.LocalPlayer.HomeWorld.Id);
+                playerPayload = new PlayerPayload(Svc.clientState.LocalPlayer.Name.TextValue, Svc.clientState.LocalPlayer.HomeWorld.Id);
                 if (type == XivChatType.CustomEmote)
                 {
                     var playerName = new SeString(new List<Payload>());
-                    playerName.Payloads.Add(new TextPayload(_clientState.LocalPlayer.Name.TextValue));
+                    playerName.Payloads.Add(new TextPayload(Svc.clientState.LocalPlayer.Name.TextValue));
                     fmessage.Append(playerName);
                 }
             }
@@ -49,7 +49,7 @@ namespace ChatBubbles
                 fmessage.Payloads.Add(new EmphasisItalicPayload(false));
             }
 
-            var pName = playerPayload == default(PlayerPayload) ? _clientState.LocalPlayer.Name.TextValue : playerPayload.PlayerName;
+            var pName = playerPayload == default(PlayerPayload) ? Svc.clientState.LocalPlayer.Name.TextValue : playerPayload.PlayerName;
             var actr = GetActorId(pName);
 
             if (_debug)
@@ -67,8 +67,8 @@ namespace ChatBubbles
 
             if (type == XivChatType.TellOutgoing)
             {
-                actr = _clientState.LocalPlayer.ObjectId;
-                pName = _clientState.LocalPlayer.Name.TextValue;
+                actr = Svc.clientState.LocalPlayer.ObjectId;
+                pName = Svc.clientState.LocalPlayer.Name.TextValue;
             }
 
             fmessage.Payloads.Insert(0,

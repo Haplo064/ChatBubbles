@@ -51,14 +51,8 @@ namespace ChatBubbles
     public unsafe partial class ChatBubbles : IDalamudPlugin
     {
         public string Name => "Chat Bubbles";
-        private readonly DalamudPluginInterface _pluginInterface;
         private readonly List<UIColor> _uiColours;
         private readonly Config _configuration;
-        private readonly CommandManager _commandManager;
-        private readonly ClientState _clientState;
-        private readonly GameGui _gameGui;
-        private readonly ChatGui _chatGui;
-        private readonly ObjectTable _objectTable;
         private bool _picker;
         private readonly List<CharData> _charDatas = new();
         private int _timer;
@@ -138,25 +132,11 @@ namespace ChatBubbles
         private readonly Hook<OpenBubble> _openBubbleFuncHook;
         
 
-        public ChatBubbles(
-            DalamudPluginInterface pluginInterface,
-            CommandManager commandManager,
-            ClientState clientState,
-            ChatGui chatGui,
-            GameGui gameGui,
-            DataManager dataManager,
-            ObjectTable objectTable,
-            Dalamud.Game.SigScanner sigScannerD
-            )
+        public ChatBubbles(DalamudPluginInterface pluginInt)
         {
-            _pluginInterface = pluginInterface;
-            _commandManager = commandManager;
-            _clientState = clientState;
-            _chatGui = chatGui;
-            _gameGui = gameGui;
-            _objectTable = objectTable;
-            var sigScanner = sigScannerD;
-            _configuration = pluginInterface.GetPluginConfig() as Config ?? new Config();
+            pluginInt.Create<Svc>();
+ 
+            _configuration = Svc.pluginInterface.GetPluginConfig() as Config ?? new Config();
             _timer = _configuration.Timer;
             _channels = _configuration.Channels;
             _textColour = _configuration.TextColour;
@@ -170,12 +150,8 @@ namespace ChatBubbles
             _selfLock = _configuration.SelfLock;
             while (_bubbleColours.Count < 39) _bubbleColours.Add(new Vector4(1,1,1,0));
             while (_bubbleColours2.Count < 39) _bubbleColours2.Add(new Vector4(0,0,0,0));
-
-
-//REMOVE WHEN GOING LIVE
-            //Resolver.Initialize(sigScanner.SearchBase);
             
-            var list = new List<UIColor>(dataManager.Excel.GetSheet<UIColor>()!.Distinct(new UIColorComparer()));
+            var list = new List<UIColor>(Svc.dataManager.Excel.GetSheet<UIColor>()!.Distinct(new UIColorComparer()));
             list.Sort((a, b) =>
             {
                 var colorA = ConvertUIColorToColor(a);
@@ -195,15 +171,15 @@ namespace ChatBubbles
             _uiColours = list;
 
 
-            _chatGui.ChatMessage += Chat_OnChatMessage;
-            _pluginInterface.UiBuilder.Draw += BubbleConfigUi;
-            _pluginInterface.UiBuilder.OpenConfigUi += BubbleConfig;
-            _commandManager.AddHandler("/bub", new CommandInfo(Command)
+            Svc.chatGui.ChatMessage += Chat_OnChatMessage;
+            Svc.pluginInterface.UiBuilder.Draw += BubbleConfigUi;
+            Svc.pluginInterface.UiBuilder.OpenConfigUi += BubbleConfig;
+            Svc.commandManager.AddHandler("/bub", new CommandInfo(Command)
             {
                 HelpMessage = "Opens the Chat Bubble config menu"
             });
             
-            var updateBubblePtr = sigScanner.ScanText("48 85 D2 0F 84 ?? ?? ?? ?? 48 89 5C 24 ?? 57 48 83 EC 20 8B 41 0C");
+            var updateBubblePtr = Svc.sigScannerD.ScanText("48 85 D2 0F 84 ?? ?? ?? ?? 48 89 5C 24 ?? 57 48 83 EC 20 8B 41 0C");
             UpdateBubble updateBubbleFunc = UpdateBubbleFuncFunc;
             try
             {
@@ -215,7 +191,7 @@ namespace ChatBubbles
             { PluginLog.Log("BAD\n" + e); }
 
             
-            var openBubblePtr = sigScanner.ScanText("E8 ?? ?? ?? ?? F6 86 ?? ?? ?? ?? ?? C7 46 ?? ?? ?? ?? ??");
+            var openBubblePtr = Svc.sigScannerD.ScanText("E8 ?? ?? ?? ?? F6 86 ?? ?? ?? ?? ?? C7 46 ?? ?? ?? ?? ??");
             OpenBubble openBubbleFunc = OpenBubbleFuncFunc;
             try
             {
@@ -226,6 +202,8 @@ namespace ChatBubbles
             catch (Exception e)
             { PluginLog.Log("BAD\n" + e); }
         }
+        
+        
 
         private Vector4 ConvertUIColorToColor(UIColor uiColor)
         {
@@ -249,7 +227,7 @@ namespace ChatBubbles
             _configuration.TextScale = _textScale;
             _configuration.BubbleSize = _bubbleSize;
             _configuration.SelfLock = _selfLock;
-            _pluginInterface.SavePluginConfig(_configuration);
+            Svc.pluginInterface.SavePluginConfig(_configuration);
         }
 
 
@@ -296,7 +274,7 @@ namespace ChatBubbles
                     
                     
             var addonPtr = IntPtr.Zero;
-            addonPtr =  _gameGui.GetAddonByName("_MiniTalk",1);
+            addonPtr =  Svc.gameGui.GetAddonByName("_MiniTalk",1);
             if (addonPtr != IntPtr.Zero)
             {
                 if (defaultScale == 0f)
@@ -350,12 +328,10 @@ namespace ChatBubbles
 
                 slots[9 - j].ID = balloonInfo.BalloonId - 1;
                 slots[9 - j].Active = true;
-                //PluginLog.Log($"Setting SLOT [{j}] to {balloonInfo.BalloonId}");
-                
             }
 
             var addonPtr = IntPtr.Zero;
-            addonPtr =  _gameGui.GetAddonByName("_MiniTalk",1);
+            addonPtr =  Svc.gameGui.GetAddonByName("_MiniTalk",1);
             if (addonPtr != IntPtr.Zero)
             {
                 if (defaultScale == 0f)
@@ -375,6 +351,7 @@ namespace ChatBubbles
             const int idOffset = 116;
             var actorId = Marshal.ReadInt32(actor + idOffset);
 
+            var counter = 0;
             foreach (var cd in _charDatas.Where(cd => actorId == cd.ActorId))
             {
                 if (bubble->State == BalloonState.Inactive)
@@ -429,13 +406,16 @@ namespace ChatBubbles
                             if (bubblesAtk[i]->IsVisible)
                             {
                                 
-                                PluginLog.Log($"i: {i} | BN: {cd.BubbleNumber} | ID: {slots[i].ID}");
-                                if (cd.BubbleNumber == slots[i].ID)
+                                var temp = slotsArrayPos(cd.BubbleNumber);
+                                if (cd.BubbleNumber == slots[9-temp].ID && i + temp == 9)
                                 {
+                                    
+                                    //PluginLog.Log($"BN: {cd.BubbleNumber} == {slots[9-temp].ID} for loop: {i}");
                                     //Trying to lock down the jiggle for own bubbles :|
+                                    /*
                                     try
                                     {
-                                        if (cd.Name==_clientState.LocalPlayer?.Name.TextValue)
+                                        if (cd.Name==Svc.clientState.LocalPlayer?.Name.TextValue)
                                         {
                                             if (_playerBubble != i)
                                             {
@@ -458,6 +438,7 @@ namespace ChatBubbles
                                         PluginLog.Verbose($"{e}");
                                         throw;
                                     }
+                                    */
                                     
                                     var resNodeNineGrid = ((AtkComponentNode*) bubblesAtk[i])->Component->UldManager
                                         .SearchNodeById(5);
@@ -467,7 +448,8 @@ namespace ChatBubbles
                                     var colour2 = GetBubbleColour2(cd.Type);
 
                                     bubbleActive[i] = true;
-                                    PluginLog.Log($"Setting {i} to ACTIVE");
+                                    counter++;
+                                    PluginLog.Log($"Changing BUBBLE AT: {i} | [{counter}]");
                                     resNodeDangly->Color.R = (byte) (colour.X * 255);
                                     resNodeDangly->Color.G = (byte) (colour.Y * 255);
                                     resNodeDangly->Color.B = (byte) (colour.Z * 255);
@@ -488,10 +470,28 @@ namespace ChatBubbles
                 break;
             }
 
+            counter = 0;
+
 
             return _updateBubbleFuncHook.Original(bubble, actor, dunnoA, dunnoB);
         }
 
+        private int slotsArrayPos(int number)
+        {
+            int value = 0;
+            for (int i = 0; i < 10; i++)
+            {
+                
+                if (number == slots[i].ID && number!=0)
+                {
+                    value= 9 - i;
+                    //PluginLog.Log($"Found {number} at position {i}, returning: {value}");
+                    break;
+                }
+            }
+            return value;
+        }
+        
         private void updateBubbleID(int number)
         {
             foreach(var cd in _charDatas)
@@ -528,12 +528,12 @@ namespace ChatBubbles
             return _openBubbleFuncHook.Original(self, actor, textPtr, notSure);
         }
 
-        public void Dispose()
+        void System.IDisposable.Dispose()
         {
-            _chatGui.ChatMessage -= Chat_OnChatMessage;
-            _pluginInterface.UiBuilder.Draw -= BubbleConfigUi;
-            _pluginInterface.UiBuilder.OpenConfigUi -= BubbleConfig;
-            _commandManager.RemoveHandler("/bub");
+            Svc.chatGui.ChatMessage -= Chat_OnChatMessage;
+            Svc.pluginInterface.UiBuilder.Draw -= BubbleConfigUi;
+            Svc.pluginInterface.UiBuilder.OpenConfigUi -= BubbleConfig;
+            Svc.commandManager.RemoveHandler("/bub");
             _updateBubbleFuncHook.Disable();
             _openBubbleFuncHook.Disable();
             cleanBubbles();
@@ -549,9 +549,9 @@ namespace ChatBubbles
 
         private uint GetActorId(string nameInput)
         {
-            if (_hide && nameInput == _clientState.LocalPlayer?.Name.TextValue) return 0;
+            if (_hide && nameInput == Svc.clientState.LocalPlayer?.Name.TextValue) return 0;
 
-            foreach (var t in _objectTable)
+            foreach (var t in Svc.objectTable)
             {
                 if (!(t is PlayerCharacter pc)) continue;
                 if (pc.Name.TextValue == nameInput) return pc.ObjectId;
@@ -562,7 +562,7 @@ namespace ChatBubbles
         //Doesn't even do the check. If I need this I'll fix it.
         private bool isActorNPC(IntPtr actorPointer)
         {
-            foreach (var t in _objectTable)
+            foreach (var t in Svc.objectTable)
             {
                 PluginLog.Log($"{actorPointer}");
                 if (t.Address == actorPointer)
