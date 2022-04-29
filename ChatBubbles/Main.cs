@@ -1,4 +1,7 @@
-﻿using Dalamud.Configuration;
+﻿//TODO - Test multiple chat types going on at once
+//TODO - Test with players chats going on
+
+using Dalamud.Configuration;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Command;
@@ -6,31 +9,17 @@ using Dalamud.Hooking;
 using Dalamud.Plugin;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Dalamud.Data;
-using Dalamud.Game.ClientState;
-using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.Gui;
 using Dalamud.Logging;
 using Lumina.Excel.GeneratedSheets;
 using ImGuiNET;
 using System.Numerics;
-using System.Text;
-using Dalamud.Game;
-using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
-
-using FFXIVClientStructs;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Balloon = FFXIVClientStructs.FFXIV.Client.Game.Balloon;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using FFXIVClientStructs.FFXIV.Client.System.String;
-using FFXIVClientStructs.STD;
 using Framework = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework;
 using Num = System.Numerics;
 
@@ -63,12 +52,15 @@ namespace ChatBubbles
         private bool _textScale;
         public List<Num.Vector4> _bubbleColours;
         public List<Num.Vector4> _bubbleColours2;
-        private float defaultScale = 0f;
+        private float _defaultScale = 1f;
+        private bool _switch = true;
         private float _bubbleSize;
         private bool _selfLock;
         private AtkResNode* _listOfBubbles;
         private int _playerBubble = 99;
-        private int _playerBubbleX = 0;
+        private float _playerBubbleX = 0;
+        private int dirtyHack = 0;
+
 
 #if DEBUG
         private bool _config = true;
@@ -115,6 +107,7 @@ namespace ChatBubbles
 
         private BalloonSlotState[] slots = new BalloonSlotState[10];
         private AtkResNode*[] bubblesAtk = new AtkResNode*[10];
+        private AtkResNode*[] bubblesAtk2 = new AtkResNode*[10];
         
         private readonly UiColorPick[] _textColour;
 
@@ -149,6 +142,8 @@ namespace ChatBubbles
             _bubbleColours2 = _configuration.BubbleColours2;
             _bubbleSize = _configuration.BubbleSize;
             _selfLock = _configuration.SelfLock;
+            _defaultScale = _configuration.DefaultScale;
+            _switch = _configuration.Switch;
             while (_bubbleColours.Count < 39) _bubbleColours.Add(new Vector4(1,1,1,0));
             while (_bubbleColours2.Count < 39) _bubbleColours2.Add(new Vector4(0,0,0,0));
             
@@ -229,6 +224,8 @@ namespace ChatBubbles
             _configuration.TextScale = _textScale;
             _configuration.BubbleSize = _bubbleSize;
             _configuration.SelfLock = _selfLock;
+            _configuration.DefaultScale = _defaultScale;
+            _configuration.Switch = _switch;
             Svc.pluginInterface.SavePluginConfig(_configuration);
         }
 
@@ -279,16 +276,9 @@ namespace ChatBubbles
             addonPtr =  Svc.gameGui.GetAddonByName("_MiniTalk",1);
             if (addonPtr != IntPtr.Zero)
             {
-                if (defaultScale == 0f)
-                {
-                    AtkUnitBase* miniTalkTemp = (AtkUnitBase*) addonPtr;
-                    defaultScale = miniTalkTemp->RootNode->ChildNode->ScaleX;
-                }
-
                 AtkUnitBase* miniTalk = (AtkUnitBase*) addonPtr;
                 _listOfBubbles = miniTalk->RootNode;
                 
-
                     bubblesAtk[0] = _listOfBubbles->ChildNode;
                     for (int k = 1; k < 10; k++)
                     {
@@ -296,8 +286,8 @@ namespace ChatBubbles
                         bubblesAtk[k]->AddRed = 0;
                         bubblesAtk[k]->AddBlue = 0;
                         bubblesAtk[k]->AddGreen = 0;
-                        bubblesAtk[k]->ScaleX = defaultScale;
-                        bubblesAtk[k]->ScaleY = defaultScale;
+                        bubblesAtk[k]->ScaleX = 1f;
+                        bubblesAtk[k]->ScaleY = 1f;
                         var resNodeNineGrid = ((AtkComponentNode*) bubblesAtk[k])->Component->UldManager
                             .SearchNodeById(5);
                         var resNodeDangly = ((AtkComponentNode*) bubblesAtk[k])->Component->UldManager
@@ -332,31 +322,12 @@ namespace ChatBubbles
                 slots[9 - j].Active = true;
             }
 
-            var addonPtr = IntPtr.Zero;
-            addonPtr =  Svc.gameGui.GetAddonByName("_MiniTalk",1);
-            if (addonPtr != IntPtr.Zero)
-            {
-                if (defaultScale == 0f)
-                {
-                    AtkUnitBase* miniTalkTemp = (AtkUnitBase*) addonPtr;
-                    defaultScale = miniTalkTemp->RootNode->ChildNode->ScaleX;
-                }
-
-                AtkUnitBase* miniTalk = (AtkUnitBase*) addonPtr;
-                _listOfBubbles = miniTalk->RootNode;
-
-
-                bubblesAtk[0] = _listOfBubbles->ChildNode;
-                
-            }
-
             const int idOffset = 116;
             var actorId = Marshal.ReadInt32(actor + idOffset);
 
-            var counter = 0;
             foreach (var cd in _charDatas.Where(cd => actorId == cd.ActorId))
             {
-                if (bubble->State == BalloonState.Inactive)
+                if (bubble->State == BalloonState.Inactive && _switch && !Svc.clientState.IsPvP)
                 {
                     
                     if (_debug)
@@ -364,8 +335,17 @@ namespace ChatBubbles
                         PluginLog.Log("Switch On");
                         PluginLog.Log($"ActorID: {cd.ActorId}");
                     }
-                    
+                    //Get the slot that will turn into the bubble
+                    var freeSlot = GetFreeBubbleSlot();
+                    bubbleActive[freeSlot] = true;
+                    bubbleActiveType[freeSlot] = cd.Type;
+                    if (cd.Name == Svc.clientState.LocalPlayer?.Name.TextValue)
+                    {
+                        
+                        _playerBubble = freeSlot;
+                    }
                     bubble->State = BalloonState.Closing;
+                    
                     if (_textScale)
                     {
                         var val = (double) cd.Message?.TextValue.Length / 10;
@@ -392,63 +372,30 @@ namespace ChatBubbles
                     bubble->PlayTimer = 0;
                     cd.NewMessage = false;
                 }
-
-                if (bubble->State == BalloonState.Active)
-                {
-                    if (addonPtr != IntPtr.Zero)
-                    {
-                        bubblesAtk[0] = _listOfBubbles->ChildNode;
-                        for (int k = 1; k < 10; k++)
-                        {
-                            //Previous sibling linked list failing??
-                            bubblesAtk[k] = bubblesAtk[k - 1]->PrevSiblingNode;
-                            if (bubblesAtk[k]->IsVisible)
-                            {
-                                //Check failing?
-                                PluginLog.Log($"Checking if: {k + slotsArrayPos(cd.BubbleNumber)} = 9");
-                                if (k + slotsArrayPos(cd.BubbleNumber) == 9)
-                                {
-                                    bubbleActive[k] = true;
-                                    bubbleActiveType[k] = cd.Type;
-                                    counter++;
-                                }
-                            }
-                        }
-                    }
-                }
+                
                 break;
             }
-
-            counter = 0;
-
-
+            
             return _updateBubbleFuncHook.Original(bubble, actor, dunnoA, dunnoB);
         }
-
-        private int slotsArrayPos(int number)
+        
+        private int GetFreeBubbleSlot()
         {
-            int value = 0;
-            for (int i = 0; i < 10; i++)
+            var addonPtr2 =  Svc.gameGui.GetAddonByName("_MiniTalk",1);
+            if (addonPtr2 != IntPtr.Zero)
             {
-                
-                if (number == slots[i].ID && number!=0)
+                for (int i = 0; i < 10; i++)
                 {
-                    value= 9 - i;
-                    //PluginLog.Log($"Found {number} at position {i}, returning: {value}");
-                    break;
+                    if (!bubblesAtk2[i]->IsVisible)
+                    {
+                        return i;
+                    }
                 }
+                return -1;
             }
-            return value;
+            else return -1;
         }
         
-        private void updateBubbleID(int number)
-        {
-            foreach(var cd in _charDatas)
-            {
-                cd.BubbleNumber -= number;
-            }
-        }
-
         private IntPtr OpenBubbleFuncFunc(IntPtr self, IntPtr actor, IntPtr textPtr, bool notSure)
         {
             const int idOffset = 116;
@@ -456,12 +403,17 @@ namespace ChatBubbles
 
             foreach (var cd in _charDatas.Where(cd => actorId == cd.ActorId))
             {
+                var freeSlot = GetFreeBubbleSlot();
                 if (_debug)
                 {
                     PluginLog.Log("--Update balloon text--");
                     PluginLog.Log(cd.Message.TextValue);
+                    PluginLog.Log($"Setting {freeSlot} to TRUE");
                 }
-
+                
+                bubbleActive[freeSlot] = true;
+                bubbleActiveType[freeSlot] = cd.Type;
+                
                 if (cd.Message?.TextValue.Length > 0)
                 {
                     var bytes = cd.Message.Encode();
@@ -492,9 +444,33 @@ namespace ChatBubbles
 
 
         // What to do when command is called
-        private void Command(string command, string arguments) => _config = true;
-        
- 
+        private void Command(string command, string arguments)
+        {
+            if (arguments == "clean")
+            {
+                var chat = new XivChatEntry();
+                chat.Message = "Cleaning Bubbles";
+                Svc.chatGui.PrintChat(chat);
+                cleanBubbles();
+            }
+            else if (arguments == "toggle")
+            {
+                var tog = "ON";
+                if (_switch)
+                {
+                    tog = "OFF";
+                }
+                var chat = new XivChatEntry();
+                chat.Message = $"Toggling Bubbles {tog}";
+                Svc.chatGui.PrintChat(chat);
+                _switch = !_switch;
+            }
+            else
+            {
+                _config = !_config;
+            }
+        }
+
 
         private uint GetActorId(string nameInput)
         {
@@ -506,22 +482,6 @@ namespace ChatBubbles
                 if (pc.Name.TextValue == nameInput) return pc.ObjectId;
             }
             return 0;
-        }
-
-        //Doesn't even do the check. If I need this I'll fix it.
-        private bool isActorNPC(IntPtr actorPointer)
-        {
-            foreach (var t in Svc.objectTable)
-            {
-                PluginLog.Log($"{actorPointer}");
-                if (t.Address == actorPointer)
-                {
-                    PluginLog.Log($"!!!!!!!!!Match!!!!!!!!!!!");
-                    PluginLog.Log($"{t.ObjectKind}");
-                }
-                else PluginLog.Log($"Nope");
-            }
-            return false;
         }
         
         private class CharData
@@ -558,6 +518,8 @@ namespace ChatBubbles
         public bool TextScale { get; set; } = false;
         public bool SelfLock { get; set; } = false;
         public float BubbleSize { get; set; } = 1f;
+        public float DefaultScale { get; set; } = 1f;
+        public bool Switch { get; set; } = true;
 
         public UiColorPick[] TextColour { get; set; } =
         {
@@ -580,6 +542,21 @@ namespace ChatBubbles
         public List<Vector4> BubbleColours2 { get; set; } = new List<Num.Vector4>();
 
         public int Queue { get; set; } = 3;
+    }
+    
+    [StructLayout(LayoutKind.Explicit, Size = 0x468)]
+    public unsafe struct AddonMiniTalk
+    {
+        [FieldOffset(0x238)] public AtkResNode* ChatBubble0;
+        [FieldOffset(0x270)] public AtkResNode* ChatBubble1;
+        [FieldOffset(0x2A8)] public AtkResNode* ChatBubble2;
+        [FieldOffset(0x2E0)] public AtkResNode* ChatBubble3;
+        [FieldOffset(0x318)] public AtkResNode* ChatBubble4;
+        [FieldOffset(0x350)] public AtkResNode* ChatBubble5;
+        [FieldOffset(0x388)] public AtkResNode* ChatBubble6;
+        [FieldOffset(0x3C0)] public AtkResNode* ChatBubble7;
+        [FieldOffset(0x3F8)] public AtkResNode* ChatBubble8;
+        [FieldOffset(0x430)] public AtkResNode* ChatBubble9;
     }
 }
 

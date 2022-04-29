@@ -2,20 +2,9 @@
 using Dalamud.Plugin;
 using ImGuiNET;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
-using Dalamud.Logging;
 using Num = System.Numerics;
-using FFXIVClientStructs;
-using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Graphics;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using Balloon = FFXIVClientStructs.FFXIV.Client.Game.Balloon;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using FFXIVClientStructs.FFXIV.Component.GUI;
-using Framework = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework;
+
 
 namespace ChatBubbles
 {
@@ -28,36 +17,29 @@ namespace ChatBubbles
             {
                 ImGui.SetNextWindowSizeConstraints(new Num.Vector2(620, 650), new Num.Vector2(1920, 1080));
                 ImGui.Begin("Chat Bubbles Config", ref _config);
-
+                
                 if (_debug)
                 {
-                    for (int y = 0; y < 10; y++)
+                    try
                     {
-                        try
+                        for (int t = 0; t < 10; t++)
                         {
-                            var temp = slotsArrayPos(_charDatas[y].BubbleNumber);
-                            ImGui.Text(
-                                $"i: {y} | A: {bubbleActive[9 - temp]} | ID: {slots[9 - temp].ID} | BN: {_charDatas[y].BubbleNumber} | {_charDatas[y].Message}");
-                        }
-                        catch (Exception e)
-                        {
-                            //lol
+                            ImGui.Text($"{t} | ID: {bubblesAtk2[t]->NodeID} | V: {bubblesAtk2[t]->IsVisible} | P: {bubbleActive[t]} | R: {bubblesAtk2[t]->AddRed} | G: {bubblesAtk2[t]->AddGreen} | B: {bubblesAtk2[t]->AddBlue}");
+                            //ImGui.Text($"{t} | ID: {bubblesAtk2[t]->X} | V: {bubblesAtk2[t]->OriginX}");
                         }
                     }
-
-                    for (int z = 0; z < 10; z++)
+                    catch (Exception e)
                     {
-                        try
-                        {
-                            ImGui.Text($"[{z}] | [{slots[z].ID}] |A: {bubbleActive[z]} | A2: {slots[z].Active}");
-                        }
-                        catch (Exception e)
-                        {
-                            //lol
-                        }
+                        //lol
                     }
+                    ImGui.Text($"{_playerBubbleX}");
                 }
-                
+                ImGui.Checkbox("Show Bubbles", ref _switch);
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(
+                        "This is here in case you used '/bub toggle' and forgot about doing it.");
+                }
                 ImGui.InputInt("Bubble Timer", ref _timer);
                 if (ImGui.IsItemHovered())
                 {
@@ -70,16 +52,24 @@ namespace ChatBubbles
                     ImGui.SetTooltip(
                         "Base the bubble time on the text length.");
                 }
+                //Jitter occurs more than once a draw frame?
+                /*
                 ImGui.Checkbox("Remove Jitter on self", ref _selfLock);
                 if (ImGui.IsItemHovered())
                 {
                     ImGui.SetTooltip(
                         "Locks the X value of your own bubbles to remove jitter.");
                 }
-                ImGui.InputFloat("Bubble Scale", ref _bubbleSize);
+                */
+                ImGui.InputFloat("Players Bubble Scale", ref _bubbleSize);
                 if (ImGui.IsItemHovered())
                 {
-                    ImGui.SetTooltip("Note that this looks a little janky.");
+                    ImGui.SetTooltip("Scales player chat bubbles.");
+                }
+                ImGui.InputFloat("NPC Bubble scale", ref _defaultScale);
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip("Scales NPC Chat bubbles.");
                 }
 
                 ImGui.Checkbox("Debug Logging", ref _debug);
@@ -209,6 +199,15 @@ namespace ChatBubbles
                 ImGui.PopStyleColor(3);
 
                 ImGui.End();
+
+                if (dirtyHack > 100)
+                {
+                    SaveConfig();
+                    dirtyHack = 0;
+                }
+
+                dirtyHack++;
+
             }
 
             if (_picker)
