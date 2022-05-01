@@ -62,6 +62,7 @@ namespace ChatBubbles
         private int dirtyHack = 0;
         private bool _config = false;
         private bool _debug = false;
+        private int pauser = 0;
 
 
         private readonly List<XivChatType> _channels;
@@ -273,35 +274,37 @@ namespace ChatBubbles
                 AtkUnitBase* miniTalk = (AtkUnitBase*) addonPtr;
                 _listOfBubbles = miniTalk->RootNode;
                 
-                    bubblesAtk[0] = _listOfBubbles->ChildNode;
-                    for (int k = 1; k < 10; k++)
-                    {
-                        bubblesAtk[k] = bubblesAtk[k - 1]->PrevSiblingNode;
-                        bubblesAtk[k]->AddRed = 0;
-                        bubblesAtk[k]->AddBlue = 0;
-                        bubblesAtk[k]->AddGreen = 0;
-                        bubblesAtk[k]->ScaleX = 1f;
-                        bubblesAtk[k]->ScaleY = 1f;
-                        var resNodeNineGrid = ((AtkComponentNode*) bubblesAtk[k])->Component->UldManager
-                            .SearchNodeById(5);
-                        var resNodeDangly = ((AtkComponentNode*) bubblesAtk[k])->Component->UldManager
-                            .SearchNodeById(4);
+                bubblesAtk[0] = _listOfBubbles->ChildNode;
+                for (int k = 1; k < 10; k++)
+                {
+                    bubblesAtk[k] = bubblesAtk[k - 1]->PrevSiblingNode;
+                    bubblesAtk[k]->AddRed = 0;
+                    bubblesAtk[k]->AddBlue = 0;
+                    bubblesAtk[k]->AddGreen = 0;
+                    bubblesAtk[k]->ScaleX = 1f;
+                    bubblesAtk[k]->ScaleY = 1f;
+                    var resNodeNineGrid = ((AtkComponentNode*) bubblesAtk[k])->Component->UldManager
+                        .SearchNodeById(5);
+                    var resNodeDangly = ((AtkComponentNode*) bubblesAtk[k])->Component->UldManager
+                        .SearchNodeById(4);
 
-                        resNodeDangly->Color.R = (byte) (255);
-                        resNodeDangly->Color.G = (byte) (255);
-                        resNodeDangly->Color.B = (byte) (255);
-                        resNodeNineGrid->Color.R = (byte) (255);
-                        resNodeNineGrid->Color.G = (byte) (255);
-                        resNodeNineGrid->Color.B = (byte) (255);
-                    }
+                    resNodeDangly->Color.R = (byte) (255);
+                    resNodeDangly->Color.G = (byte) (255);
+                    resNodeDangly->Color.B = (byte) (255);
+                    resNodeNineGrid->Color.R = (byte) (255);
+                    resNodeNineGrid->Color.G = (byte) (255);
+                    resNodeNineGrid->Color.B = (byte) (255);
+                }
             }
         }
         
         private IntPtr UpdateBubbleFuncFunc(Balloon* bubble, IntPtr actor, IntPtr dunnoA, IntPtr dunnoB)
         {
-          
-            var log = (AgentScreenLog*)Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentByInternalId(AgentId.ScreenLog);
-            
+
+            var log =
+                (AgentScreenLog*) Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentByInternalId(
+                    AgentId.ScreenLog);
+
             for (int k = 0; k < 10; k++)
             {
                 slots[k] = new BalloonSlotState();
@@ -323,23 +326,30 @@ namespace ChatBubbles
             {
                 if (bubble->State == BalloonState.Inactive && _switch && !Svc.clientState.IsPvP)
                 {
-                    
+
                     if (_debug)
                     {
-                        PluginLog.Log("Switch On");
-                        PluginLog.Log($"ActorID: {cd.ActorId}");
-                        PluginLog.Log($"ActorID_Got: {actorId}");
+                        PluginLog.Log("--------Switch On----------");
+                        //PluginLog.Log($"ActorID: {cd.ActorId}");
+                        //PluginLog.Log($"ActorID_Got: {actorId}");
                     }
+
                     //Get the slot that will turn into the bubble
                     var freeSlot = GetFreeBubbleSlot();
                     bubbleActive[freeSlot] = true;
                     bubbleActiveType[freeSlot] = cd.Type;
+
+
+                    PluginLog.Log($"[{freeSlot}] Old: {bubbleActiveType[freeSlot]} | New: {cd.Type}");
+
+                    
                     if (cd.Name == Svc.clientState.LocalPlayer?.Name.TextValue)
                     {
                         _playerBubble = freeSlot;
                     }
-                    bubble->State = BalloonState.Closing;
                     
+                    bubble->State = BalloonState.Closing;
+
                     if (_textScale)
                     {
                         var val = (double) cd.Message?.TextValue.Length / 10;
@@ -349,27 +359,26 @@ namespace ChatBubbles
                         }
                         else
                         {
-                            bubble->PlayTimer = (float)(_timer * val);
+                            bubble->PlayTimer = (float) (_timer * val);
                         }
                     }
                     else
                     {
                         bubble->PlayTimer = _timer;
                     }
-                    
-                    cd.BubbleNumber = log->BalloonCounter;
                 }
-                
+
                 if (bubble->State == BalloonState.Active && cd.NewMessage)
                 {
                     bubble->State = BalloonState.Inactive;
                     bubble->PlayTimer = 0;
                     cd.NewMessage = false;
                 }
-                
+
                 break;
             }
-            
+
+
             return _updateBubbleFuncHook.Original(bubble, actor, dunnoA, dunnoB);
         }
         
@@ -398,18 +407,19 @@ namespace ChatBubbles
             foreach (var cd in _charDatas.Where(cd => actorId == cd.ActorId))
             {
                 var freeSlot = GetFreeBubbleSlot();
+
                 if (_debug)
                 {
                     PluginLog.Log("--Update balloon text--");
-                    PluginLog.Log(cd.Message.TextValue);
+                    //PluginLog.Log(cd.Message.TextValue);
                     PluginLog.Log($"Setting {freeSlot} to TRUE");
-                    PluginLog.Log($"ActorID: {cd.ActorId}");
-                    PluginLog.Log($"ActorID_Got: {actorId}");
+                    //PluginLog.Log($"ActorID: {cd.ActorId}");
+                    //PluginLog.Log($"ActorID_Got: {actorId}");
                 }
-                
-                bubbleActive[freeSlot] = true;
+
                 bubbleActiveType[freeSlot] = cd.Type;
-                
+                bubbleActive[freeSlot] = true;
+
                 if (cd.Message?.TextValue.Length > 0)
                 {
                     var bytes = cd.Message.Encode();
@@ -425,7 +435,7 @@ namespace ChatBubbles
             return _openBubbleFuncHook.Original(self, actor, textPtr, notSure);
         }
 
-        void System.IDisposable.Dispose()
+        void IDisposable.Dispose()
         {
             Svc.chatGui.ChatMessage -= Chat_OnChatMessage;
             Svc.pluginInterface.UiBuilder.Draw -= BubbleConfigUi;
@@ -488,7 +498,7 @@ namespace ChatBubbles
             public DateTime MessageDateTime;
             public string? Name;
             public bool NewMessage { get; set; }
-            public int BubbleNumber;
+            public int BubbleNumber = -1;
         }
     }
 

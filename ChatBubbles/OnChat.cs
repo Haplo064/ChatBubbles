@@ -54,15 +54,15 @@ namespace ChatBubbles
 
             if (_debug)
             {
-                PluginLog.Log($"Type={type}");
-                PluginLog.Log($"Sender={pName}");
-                PluginLog.Log($"Message Raw={cmessage.TextValue}");
-                PluginLog.Log($"ActorID={actr}");
-                PluginLog.Log($"--------------");
-                foreach (Payload x in cmessage.Payloads)
-                {
-                    PluginLog.Log($"TYPE: {x.Type}");
-                }
+                //PluginLog.Log($"Type={type}");
+                //PluginLog.Log($"Sender={pName}");
+                //PluginLog.Log($"Message Raw={cmessage.TextValue}");
+                //PluginLog.Log($"ActorID={actr}");
+                //PluginLog.Log($"--------------");
+                //foreach (Payload x in cmessage.Payloads)
+                //{
+                //    PluginLog.Log($"TYPE: {x.Type}");
+                //}
             }
 
             if (type == XivChatType.TellOutgoing)
@@ -79,15 +79,25 @@ namespace ChatBubbles
             var update = 0;
             var time = new TimeSpan(0, 0, 0);
             var add = 0;
+            var bn = -1;
 
             foreach (var cd in _charDatas)
             {
-                if (_debug) PluginLog.Log($"Check: {actr}, Against: {cd.ActorId}");
+                if (_debug)
+                {
+                    //PluginLog.Log($"Check: {actr}, Against: {cd.ActorId}");
+                }
 
                 if (cd.ActorId != actr) continue;
-                if (_debug) PluginLog.Log("Priors found");
+                if (_debug)
+                {
+                    PluginLog.Log("Priors found");
+                    PluginLog.Log($"Setting BN to {cd.BubbleNumber}");
+                }
                 add += _timer;
                 update++;
+                bn = cd.BubbleNumber;
+                
 
                 if (_bubbleFunctionality == 0) continue;
                 
@@ -120,7 +130,10 @@ namespace ChatBubbles
 
             if (update == 0)
             {
-                if (_debug) PluginLog.Log("Adding new one");
+                if (_debug)
+                {
+                    //PluginLog.Log("Adding new one");
+                }
                 _charDatas.Add(new CharData
                 {
                     ActorId = actr,
@@ -134,7 +147,7 @@ namespace ChatBubbles
             {
                 if (_debug)
                 {
-                    PluginLog.Log(DateTime.Now.Add(time).ToString(CultureInfo.CurrentCulture));
+                    //PluginLog.Log(DateTime.Now.Add(time).ToString(CultureInfo.CurrentCulture));
                 }
 
                 if (update >= _queue) return;
@@ -145,8 +158,10 @@ namespace ChatBubbles
                     MessageDateTime = DateTime.Now.Add(time),
                     Message = fmessage,
                     Name = pName,
-                    Type = type
+                    Type = type,
+                    BubbleNumber = bn
                 });
+                
             }
         }
     }

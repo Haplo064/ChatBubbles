@@ -24,7 +24,7 @@ namespace ChatBubbles
                     {
                         for (int t = 0; t < 10; t++)
                         {
-                            ImGui.Text($"{t} | ID: {bubblesAtk2[t]->NodeID} | V: {bubblesAtk2[t]->IsVisible} | P: {bubbleActive[t]} | R: {bubblesAtk2[t]->AddRed} | G: {bubblesAtk2[t]->AddGreen} | B: {bubblesAtk2[t]->AddBlue}");
+                            ImGui.Text($"{t} | ID: {bubblesAtk2[t]->NodeID} | V: {bubblesAtk2[t]->IsVisible} | P: {bubbleActive[t]} | T: {bubbleActiveType[t]} ");
                             //ImGui.Text($"{t} | ID: {bubblesAtk2[t]->X} | V: {bubblesAtk2[t]->OriginX}");
                         }
                     }
