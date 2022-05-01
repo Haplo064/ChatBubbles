@@ -11,7 +11,8 @@ namespace ChatBubbles
 
         private void OnceUponAFrame(object _)
         {
-            var addonPtr2 =  Svc.gameGui.GetAddonByName("_MiniTalk",1);
+            var addonPtr2 = IntPtr.Zero;
+            addonPtr2 =  Svc.gameGui.GetAddonByName("_MiniTalk",1);
             if (addonPtr2 != IntPtr.Zero)
             {
                 AddonMiniTalk* miniTalk = (AddonMiniTalk*) addonPtr2;
@@ -41,7 +42,7 @@ namespace ChatBubbles
                                 _playerBubbleX = bubblesAtk2[k]->X;
                             }
 
-                            bubblesAtk2[k]->SetPositionFloat(_playerBubbleX,bubblesAtk2[k]->Y);
+                            //bubblesAtk2[k]->SetPositionFloat(_playerBubbleX,bubblesAtk2[k]->Y);
                         }
                         
                         var colour = GetBubbleColour(bubbleActiveType[k]);

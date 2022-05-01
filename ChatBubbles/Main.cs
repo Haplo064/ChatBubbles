@@ -60,15 +60,9 @@ namespace ChatBubbles
         private int _playerBubble = 99;
         private float _playerBubbleX = 0;
         private int dirtyHack = 0;
-
-
-#if DEBUG
-        private bool _config = true;
-        private bool _debug = true;
-#else
         private bool _config = false;
         private bool _debug = false;
-#endif
+
 
         private readonly List<XivChatType> _channels;
 
@@ -305,7 +299,7 @@ namespace ChatBubbles
         
         private IntPtr UpdateBubbleFuncFunc(Balloon* bubble, IntPtr actor, IntPtr dunnoA, IntPtr dunnoB)
         {
-        
+          
             var log = (AgentScreenLog*)Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentByInternalId(AgentId.ScreenLog);
             
             for (int k = 0; k < 10; k++)
@@ -334,6 +328,7 @@ namespace ChatBubbles
                     {
                         PluginLog.Log("Switch On");
                         PluginLog.Log($"ActorID: {cd.ActorId}");
+                        PluginLog.Log($"ActorID_Got: {actorId}");
                     }
                     //Get the slot that will turn into the bubble
                     var freeSlot = GetFreeBubbleSlot();
@@ -341,7 +336,6 @@ namespace ChatBubbles
                     bubbleActiveType[freeSlot] = cd.Type;
                     if (cd.Name == Svc.clientState.LocalPlayer?.Name.TextValue)
                     {
-                        
                         _playerBubble = freeSlot;
                     }
                     bubble->State = BalloonState.Closing;
@@ -409,6 +403,8 @@ namespace ChatBubbles
                     PluginLog.Log("--Update balloon text--");
                     PluginLog.Log(cd.Message.TextValue);
                     PluginLog.Log($"Setting {freeSlot} to TRUE");
+                    PluginLog.Log($"ActorID: {cd.ActorId}");
+                    PluginLog.Log($"ActorID_Got: {actorId}");
                 }
                 
                 bubbleActive[freeSlot] = true;
