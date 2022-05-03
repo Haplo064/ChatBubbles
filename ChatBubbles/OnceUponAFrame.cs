@@ -29,12 +29,23 @@ namespace ChatBubbles
                     bubblesAtk2[8] = miniTalk->ChatBubble8;
                     bubblesAtk2[9] = miniTalk->ChatBubble9;
                 }
+                else
+                {
+                    for (int k = 0; k < 10; k++)
+                    {
+                        bubblesAtk2[k] = null;
+                    }
+                }
 
 
                 try
                 {
                     for (int k = 0; k < 10; k++)
                     {
+                        if (bubblesAtk2[k] == null)
+                        {
+                            break;
+                        }
                         if (bubblesAtk2[k]->IsVisible && bubbleActive[k])
                         {
                             if (_playerBubble == k && _selfLock)
@@ -75,6 +86,7 @@ namespace ChatBubbles
                             bubblesAtk2[k]->AddGreen = 0;
                             bubblesAtk2[k]->ScaleX = _defaultScale;
                             bubblesAtk2[k]->ScaleY = _defaultScale;
+
 
                             var resNodeNineGrid = bubblesAtk2[k]->GetComponent()->UldManager.SearchNodeById(5);
                             var resNodeDangly = bubblesAtk2[k]->GetComponent()->UldManager.SearchNodeById(4);
