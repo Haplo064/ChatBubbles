@@ -22,11 +22,12 @@ namespace ChatBubbles
                 {
                     try
                     {
-                        for (int t = 0; t < 10; t++)
+                        foreach (CharData cd in _charDatas)
                         {
-                            ImGui.Text($"{t} | ID: {bubblesAtk2[t]->NodeID} | V: {bubblesAtk2[t]->IsVisible} | P: {bubbleActive[t]} | T: {bubbleActiveType[t]} ");
-                            //ImGui.Text($"{t} | ID: {bubblesAtk2[t]->X} | V: {bubblesAtk2[t]->OriginX}");
+                            ImGui.Text($"{(DateTime.Now - cd.MessageDateTime).TotalMilliseconds} | {cd.Message} | {cd.KillMe}");
                         }
+
+                        ImGui.Text($"{_timer * 500}");
                     }
                     catch (Exception e)
                     {
@@ -45,6 +46,8 @@ namespace ChatBubbles
                 {
                     ImGui.SetTooltip("How long the bubble will last on screen.");
                 }
+                //Introduced a lot of issues
+                /*
                 ImGui.SameLine();
                 ImGui.Checkbox("Scale with Text Length", ref _textScale);
                 if (ImGui.IsItemHovered())
@@ -52,6 +55,7 @@ namespace ChatBubbles
                     ImGui.SetTooltip(
                         "Base the bubble time on the text length.");
                 }
+                */
                 //Jitter occurs more than once a draw frame?
                 /*
                 ImGui.Checkbox("Remove Jitter on self", ref _selfLock);
@@ -236,12 +240,7 @@ namespace ChatBubbles
                 ImGui.End();
             }
 
-            for (var i = 0; i < _charDatas.Count; i++)
-            {
-                if (!((DateTime.Now - _charDatas[i].MessageDateTime).TotalMilliseconds > (_timer * 950))) continue;
-                _charDatas.RemoveAt(i);
-                i--;
-            }
+
         }
     }
 }

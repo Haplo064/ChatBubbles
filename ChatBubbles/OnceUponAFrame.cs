@@ -64,10 +64,17 @@ namespace ChatBubbles
                             bubblesAtk2[k]->AddRed = (ushort) (colour2.X * 255);
                             bubblesAtk2[k]->AddGreen = (ushort) (colour2.Y * 255);
                             bubblesAtk2[k]->AddBlue = (ushort) (colour2.Z * 255);
-
+                            if (_debug)
+                            {
+                                PluginLog.Log($"SxB: {bubblesAtk2[k]->ScaleX} | SyB: {bubblesAtk2[k]->ScaleY}");
+                                PluginLog.Log($"dfs: {_bubbleSize}");
+                            }
                             bubblesAtk2[k]->ScaleX = _bubbleSize;
                             bubblesAtk2[k]->ScaleY = _bubbleSize;
-
+                            if (_debug)
+                            {
+                                PluginLog.Log($"SxA: {bubblesAtk2[k]->ScaleX} | SyA: {bubblesAtk2[k]->ScaleY}");
+                            }
                             var resNodeNineGrid = bubblesAtk2[k]->GetComponent()->UldManager.SearchNodeById(5);
                             var resNodeDangly = bubblesAtk2[k]->GetComponent()->UldManager.SearchNodeById(4);
 
@@ -81,11 +88,20 @@ namespace ChatBubbles
                         }
                         else if (bubblesAtk2[k]->IsVisible)
                         {
+                            if (_debug)
+                            {
+                                PluginLog.Log($"SxB: {bubblesAtk2[k]->ScaleX} | SyB: {bubblesAtk2[k]->ScaleY}");
+                                PluginLog.Log($"dfs: {_defaultScale}");
+                            }
                             bubblesAtk2[k]->AddRed = 0;
                             bubblesAtk2[k]->AddBlue = 0;
                             bubblesAtk2[k]->AddGreen = 0;
                             bubblesAtk2[k]->ScaleX = _defaultScale;
                             bubblesAtk2[k]->ScaleY = _defaultScale;
+                            if (_debug)
+                            {
+                                PluginLog.Log($"SxA: {bubblesAtk2[k]->ScaleX} | SyA: {bubblesAtk2[k]->ScaleY}");
+                            }
 
 
                             var resNodeNineGrid = bubblesAtk2[k]->GetComponent()->UldManager.SearchNodeById(5);
@@ -131,6 +147,19 @@ namespace ChatBubbles
             catch (Exception e)
             {
                 //"fix"
+            }
+            
+            //Cleaning charDatas
+            for (var i = 0; i < _charDatas.Count; i++)
+            {
+                if ( (DateTime.Now - _charDatas[i].MessageDateTime).TotalMilliseconds > (_timer * 950) || _charDatas[i].KillMe)
+                {
+                    PluginLog.Log($"{(DateTime.Now - _charDatas[i].MessageDateTime).TotalMilliseconds} > {_timer * 950}");
+                    PluginLog.Log($"Removing [{i}]: {_charDatas[i].Message.TextValue}");
+                    _charDatas.RemoveAt(i);
+                    i--;
+                }
+
             }
         }
     }

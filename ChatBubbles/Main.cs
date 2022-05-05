@@ -216,7 +216,7 @@ namespace ChatBubbles
             _configuration.Hide = _hide;
             _configuration.BubbleColours = _bubbleColours;
             _configuration.BubbleColours2 = _bubbleColours2;
-            _configuration.TextScale = _textScale;
+            _configuration.TextScale = false;
             _configuration.BubbleSize = _bubbleSize;
             _configuration.SelfLock = _selfLock;
             _configuration.DefaultScale = _defaultScale;
@@ -443,6 +443,8 @@ namespace ChatBubbles
                     textPtr = newPointer;
                 }
 
+
+                
                 break;
             }
 
@@ -513,6 +515,7 @@ namespace ChatBubbles
             public string? Name;
             public bool NewMessage { get; set; }
             public int BubbleNumber = -1;
+            public bool KillMe { get; set; } = false;
         }
     }
 

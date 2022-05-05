@@ -80,7 +80,8 @@ namespace ChatBubbles
             var time = new TimeSpan(0, 0, 0);
             var add = 0;
             var bn = -1;
-
+            var timeTake = 0;
+            
             foreach (var cd in _charDatas)
             {
                 if (_debug)
@@ -94,28 +95,36 @@ namespace ChatBubbles
                     PluginLog.Log("Priors found");
                     PluginLog.Log($"Setting BN to {cd.BubbleNumber}");
                 }
-                if (_textScale)
+
+                if (timeTake == 0)
                 {
-                    var val = (double) (cd.Message?.TextValue+cmessage.TextValue).Length / 10;
-                    if ((_timer * val) < _timer)
+                    if (_textScale)
                     {
-                        add += _timer;
+                        var val = (double) (cd.Message?.TextValue + cmessage.TextValue).Length / 10;
+                        if ((_timer * val) < _timer)
+                        {
+                            add += _timer;
+                        }
+                        else
+                        {
+                            add += (int) (_timer * val);
+                        }
                     }
                     else
                     {
-                        add += (int)(_timer * val);
+                        add += _timer;
                     }
                 }
-                else
-                {
-                    add += _timer;
-                }
-                
+
                 update++;
                 bn = cd.BubbleNumber;
                 
                 //queue
-                if (_bubbleFunctionality == 0) continue;
+                if (_bubbleFunctionality == 0)
+                {
+                    timeTake = (int)(DateTime.Now - cd.MessageDateTime).TotalMilliseconds;
+                    continue;
+                }
                 
                 switch (_bubbleFunctionality) {
                     case 1: // stack
@@ -134,6 +143,7 @@ namespace ChatBubbles
                         }
                         else
                         {
+                            timeTake = (int)(DateTime.Now - cd.MessageDateTime).TotalMilliseconds;
                             continue;
                         }
                         break;
@@ -170,7 +180,9 @@ namespace ChatBubbles
                 {
                     return;
                 }
-                time = new TimeSpan(0, 0, add);
+                time = new TimeSpan(0, 0, 0, add, -timeTake);
+                
+                
                 _charDatas.Add(new CharData
                 {
                     ActorId = actr,
