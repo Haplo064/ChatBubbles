@@ -336,11 +336,15 @@ namespace ChatBubbles
 
                     //Get the slot that will turn into the bubble
                     var freeSlot = GetFreeBubbleSlot();
+                    if (freeSlot == -1)
+                    {
+                        break;
+                    }
                     bubbleActive[freeSlot] = true;
                     bubbleActiveType[freeSlot] = cd.Type;
 
 
-                    PluginLog.Log($"[{freeSlot}] Old: {bubbleActiveType[freeSlot]} | New: {cd.Type}");
+                    //PluginLog.Log($"[{freeSlot}] Old: {bubbleActiveType[freeSlot]} | New: {cd.Type}");
 
                     
                     if (cd.Name == Svc.clientState.LocalPlayer?.Name.TextValue)
@@ -407,7 +411,10 @@ namespace ChatBubbles
             foreach (var cd in _charDatas.Where(cd => actorId == cd.ActorId))
             {
                 var freeSlot = GetFreeBubbleSlot();
-
+                if (freeSlot == -1)
+                {
+                    break;
+                }
                 if (_debug)
                 {
                     PluginLog.Log("--Update balloon text--");
