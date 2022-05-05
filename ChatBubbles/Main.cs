@@ -310,76 +310,83 @@ namespace ChatBubbles
                 slots[k] = new BalloonSlotState();
             }
 
-
-            for (ulong j = 0; j < log->BalloonQueue.MySize; j++)
+            if (log != null)
             {
-                var balloonInfo = log->BalloonQueue.Get(j);
+                for (ulong j = 0; j < log->BalloonQueue.MySize; j++)
+                {
+                    var balloonInfo = log->BalloonQueue.Get(j);
 
-                slots[9 - j].ID = balloonInfo.BalloonId - 1;
-                slots[9 - j].Active = true;
+                    slots[9 - j].ID = balloonInfo.BalloonId - 1;
+                    slots[9 - j].Active = true;
+                }
             }
 
-            const int idOffset = 116;
-            var actorId = Marshal.ReadInt32(actor + idOffset);
-
-            foreach (var cd in _charDatas.Where(cd => actorId == cd.ActorId))
+            if (actor != null)
             {
-                if (bubble->State == BalloonState.Inactive && _switch && !Svc.clientState.IsPvP)
+                const int idOffset = 116;
+                var actorId = Marshal.ReadInt32(actor + idOffset);
+
+
+                foreach (var cd in _charDatas.Where(cd => actorId == cd.ActorId))
                 {
-
-                    if (_debug)
+                    if (bubble->State == BalloonState.Inactive && _switch && !Svc.clientState.IsPvP)
                     {
-                        PluginLog.Log("--------Switch On----------");
-                        //PluginLog.Log($"ActorID: {cd.ActorId}");
-                        //PluginLog.Log($"ActorID_Got: {actorId}");
-                    }
 
-                    //Get the slot that will turn into the bubble
-                    var freeSlot = GetFreeBubbleSlot();
-                    if (freeSlot == -1)
-                    {
-                        break;
-                    }
-                    bubbleActive[freeSlot] = true;
-                    bubbleActiveType[freeSlot] = cd.Type;
-
-
-                    //PluginLog.Log($"[{freeSlot}] Old: {bubbleActiveType[freeSlot]} | New: {cd.Type}");
-
-                    
-                    if (cd.Name == Svc.clientState.LocalPlayer?.Name.TextValue)
-                    {
-                        _playerBubble = freeSlot;
-                    }
-                    
-                    bubble->State = BalloonState.Closing;
-
-                    if (_textScale)
-                    {
-                        var val = (double) cd.Message?.TextValue.Length / 10;
-                        if ((float) (_timer * val) < _timer)
+                        if (_debug)
                         {
-                            bubble->PlayTimer = _timer;
+                            PluginLog.Log("--------Switch On----------");
+                            //PluginLog.Log($"ActorID: {cd.ActorId}");
+                            //PluginLog.Log($"ActorID_Got: {actorId}");
+                        }
+
+                        //Get the slot that will turn into the bubble
+                        var freeSlot = GetFreeBubbleSlot();
+                        if (freeSlot == -1)
+                        {
+                            break;
+                        }
+
+                        bubbleActive[freeSlot] = true;
+                        bubbleActiveType[freeSlot] = cd.Type;
+
+
+                        //PluginLog.Log($"[{freeSlot}] Old: {bubbleActiveType[freeSlot]} | New: {cd.Type}");
+
+
+                        if (cd.Name == Svc.clientState.LocalPlayer?.Name.TextValue)
+                        {
+                            _playerBubble = freeSlot;
+                        }
+
+                        bubble->State = BalloonState.Closing;
+
+                        if (_textScale)
+                        {
+                            var val = (double) cd.Message?.TextValue.Length / 10;
+                            if ((float) (_timer * val) < _timer)
+                            {
+                                bubble->PlayTimer = _timer;
+                            }
+                            else
+                            {
+                                bubble->PlayTimer = (float) (_timer * val);
+                            }
                         }
                         else
                         {
-                            bubble->PlayTimer = (float) (_timer * val);
+                            bubble->PlayTimer = _timer;
                         }
                     }
-                    else
+
+                    if (bubble->State == BalloonState.Active && cd.NewMessage)
                     {
-                        bubble->PlayTimer = _timer;
+                        bubble->State = BalloonState.Inactive;
+                        bubble->PlayTimer = 0;
+                        cd.NewMessage = false;
                     }
-                }
 
-                if (bubble->State == BalloonState.Active && cd.NewMessage)
-                {
-                    bubble->State = BalloonState.Inactive;
-                    bubble->PlayTimer = 0;
-                    cd.NewMessage = false;
+                    break;
                 }
-
-                break;
             }
 
 
