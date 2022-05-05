@@ -94,11 +94,27 @@ namespace ChatBubbles
                     PluginLog.Log("Priors found");
                     PluginLog.Log($"Setting BN to {cd.BubbleNumber}");
                 }
-                add += _timer;
+                if (_textScale)
+                {
+                    var val = (double) (cd.Message?.TextValue+cmessage.TextValue).Length / 10;
+                    if ((_timer * val) < _timer)
+                    {
+                        add += _timer;
+                    }
+                    else
+                    {
+                        add += (int)(_timer * val);
+                    }
+                }
+                else
+                {
+                    add += _timer;
+                }
+                
                 update++;
                 bn = cd.BubbleNumber;
                 
-
+                //queue
                 if (_bubbleFunctionality == 0) continue;
                 
                 switch (_bubbleFunctionality) {
@@ -150,7 +166,10 @@ namespace ChatBubbles
                     //PluginLog.Log(DateTime.Now.Add(time).ToString(CultureInfo.CurrentCulture));
                 }
 
-                if (update >= _queue) return;
+                if (update >= _queue)
+                {
+                    return;
+                }
                 time = new TimeSpan(0, 0, add);
                 _charDatas.Add(new CharData
                 {
