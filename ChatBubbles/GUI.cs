@@ -75,6 +75,11 @@ namespace ChatBubbles
                 {
                     ImGui.SetTooltip("Scales NPC Chat bubbles.");
                 }
+                ImGui.InputInt("Yalm distance", ref _yalmCap);
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip("Anything over this distance in Yalms will not be shown");
+                }
 
                 ImGui.Checkbox("Debug Logging", ref _debug);
                 if (ImGui.IsItemHovered())
@@ -125,6 +130,23 @@ namespace ChatBubbles
                 if (ImGui.IsItemHovered())
                 {
                     ImGui.SetTooltip("Hides your character's bubble.");
+                }
+                
+                ImGui.SameLine();
+                if (!pride)
+                {
+                    ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0);
+                    ImGui.Checkbox("Pride", ref pride);
+                    ImGui.PopStyleVar();
+                }
+                else
+                {
+                    ImGui.Checkbox("Pride", ref pride);
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(":O");
                 }
 
                 var i = 0;

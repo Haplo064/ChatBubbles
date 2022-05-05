@@ -51,6 +51,9 @@ namespace ChatBubbles
 
             var pName = playerPayload == default(PlayerPayload) ? Svc.clientState.LocalPlayer.Name.TextValue : playerPayload.PlayerName;
             var actr = GetActorId(pName);
+            //Getting Distance!
+            var x = GetActorDistance(pName);
+            if (x > _yalmCap) return;
 
             if (_debug)
             {

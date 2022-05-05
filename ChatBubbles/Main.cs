@@ -16,6 +16,7 @@ using Dalamud.Logging;
 using Lumina.Excel.GeneratedSheets;
 using ImGuiNET;
 using System.Numerics;
+using Dalamud.Game.ClientState.Objects.Types;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Balloon = FFXIVClientStructs.FFXIV.Client.Game.Balloon;
@@ -63,6 +64,13 @@ namespace ChatBubbles
         private bool _config = false;
         private bool _debug = false;
         private int pauser = 0;
+        //#Pride
+        private bool f1 = false;
+        private bool f2 = false;
+        private bool f3 = false;
+        private bool pride = false;
+        //Distance
+        private int _yalmCap = 100;
 
 
         private readonly List<XivChatType> _channels;
@@ -139,6 +147,7 @@ namespace ChatBubbles
             _selfLock = _configuration.SelfLock;
             _defaultScale = _configuration.DefaultScale;
             _switch = _configuration.Switch;
+            _yalmCap = _configuration.YalmCap;
             while (_bubbleColours.Count < 39) _bubbleColours.Add(new Vector4(1,1,1,0));
             while (_bubbleColours2.Count < 39) _bubbleColours2.Add(new Vector4(0,0,0,0));
             
@@ -221,6 +230,7 @@ namespace ChatBubbles
             _configuration.SelfLock = _selfLock;
             _configuration.DefaultScale = _defaultScale;
             _configuration.Switch = _switch;
+            _configuration.YalmCap = _yalmCap;
             Svc.pluginInterface.SavePluginConfig(_configuration);
         }
 
@@ -505,6 +515,29 @@ namespace ChatBubbles
             }
             return 0;
         }
+
+        private int GetActorDistance(string name)
+        {
+            if (name == Svc.clientState.LocalPlayer?.Name.TextValue) return 0;
+
+            foreach (var t in Svc.objectTable)
+            {
+                if (!(t is PlayerCharacter pc)) continue;
+                if (pc.Name.TextValue == name)
+                {
+                    if (_debug)
+                    {
+                        PluginLog.Log(
+                            $"Yalms: {(int) Math.Sqrt(Math.Pow(pc.YalmDistanceX, 2) + Math.Pow(pc.YalmDistanceZ, 2))}");
+                    }
+
+                    return (int)Math.Sqrt( Math.Pow(pc.YalmDistanceX, 2) + Math.Pow(pc.YalmDistanceZ, 2));
+                }
+            }
+            return 0;
+            
+            
+        }
         
         private class CharData
         {
@@ -543,6 +576,7 @@ namespace ChatBubbles
         public float BubbleSize { get; set; } = 1f;
         public float DefaultScale { get; set; } = 1f;
         public bool Switch { get; set; } = true;
+        public int YalmCap { get; set; } = 99;
 
         public UiColorPick[] TextColour { get; set; } =
         {

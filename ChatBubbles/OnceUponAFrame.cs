@@ -57,13 +57,80 @@ namespace ChatBubbles
 
                                 //bubblesAtk2[k]->SetPositionFloat(_playerBubbleX,bubblesAtk2[k]->Y);
                             }
-
+                        
                             var colour = GetBubbleColour(bubbleActiveType[k]);
                             var colour2 = GetBubbleColour2(bubbleActiveType[k]);
 
-                            bubblesAtk2[k]->AddRed = (ushort) (colour2.X * 255);
-                            bubblesAtk2[k]->AddGreen = (ushort) (colour2.Y * 255);
-                            bubblesAtk2[k]->AddBlue = (ushort) (colour2.Z * 255);
+                            if (!pride)
+                            {
+                                    bubblesAtk2[k]->AddRed = (ushort) (colour2.X * 255);
+                                    bubblesAtk2[k]->AddGreen = (ushort) (colour2.Y * 255);
+                                    bubblesAtk2[k]->AddBlue = (ushort) (colour2.Z * 255);
+                                    var resNodeNineGrid = bubblesAtk2[k]->GetComponent()->UldManager.SearchNodeById(5);
+                                    var resNodeDangly = bubblesAtk2[k]->GetComponent()->UldManager.SearchNodeById(4);
+                                    resNodeDangly->Color.R = (byte) (colour.X * 255);
+                                    resNodeDangly->Color.G = (byte) (colour.Y * 255);
+                                    resNodeDangly->Color.B = (byte) (colour.Z * 255);
+
+                                    resNodeNineGrid->Color.R = (byte) (colour.X * 255);
+                                    resNodeNineGrid->Color.G = (byte) (colour.Y * 255);
+                                    resNodeNineGrid->Color.B = (byte) (colour.Z * 255);
+                            }
+                            else
+                            {
+                                var rand = new Random();
+                                
+                                if (f1)
+                                {
+                                    bubblesAtk2[k]->AddBlue += (ushort)rand.Next(0, 2);
+                                }
+                                else
+                                {
+                                    bubblesAtk2[k]->AddBlue -= (ushort)rand.Next(0, 2);
+                                }
+
+                                if (f2)
+                                {
+                                    bubblesAtk2[k]->AddRed += (ushort)rand.Next(0, 2);
+                                }
+                                else
+                                {
+                                    bubblesAtk2[k]->AddRed -= (ushort)rand.Next(0, 2);
+                                }
+
+                                if (f3)
+                                {
+                                    bubblesAtk2[k]->AddGreen += (ushort)rand.Next(0, 2);
+                                }
+                                else
+                                {
+                                    bubblesAtk2[k]->AddGreen -= (ushort)rand.Next(0, 2);
+                                }
+
+                                if (bubblesAtk2[k]->AddBlue >= 100)
+                                {
+                                    bubblesAtk2[k]->AddBlue = 100;
+                                    f1=!f1;
+                                }
+
+                                if (bubblesAtk2[k]->AddRed >= 100)
+                                {
+                                    bubblesAtk2[k]->AddRed = 100;
+                                    f2=!f2;
+                                }
+
+                                if (bubblesAtk2[k]->AddGreen >= 100)
+                                {
+                                    bubblesAtk2[k]->AddGreen = 100;
+                                    f3=!f3;
+                                }
+                            
+                                if(bubblesAtk2[k]->AddBlue<=10) f1=!f1;
+                                if(bubblesAtk2[k]->AddRed<=10) f2=!f2;
+                                if(bubblesAtk2[k]->AddGreen<=10) f3=!f3;
+                            }
+
+
                             if (_debug)
                             {
                                 PluginLog.Log($"SxB: {bubblesAtk2[k]->ScaleX} | SyB: {bubblesAtk2[k]->ScaleY}");
@@ -75,16 +142,9 @@ namespace ChatBubbles
                             {
                                 PluginLog.Log($"SxA: {bubblesAtk2[k]->ScaleX} | SyA: {bubblesAtk2[k]->ScaleY}");
                             }
-                            var resNodeNineGrid = bubblesAtk2[k]->GetComponent()->UldManager.SearchNodeById(5);
-                            var resNodeDangly = bubblesAtk2[k]->GetComponent()->UldManager.SearchNodeById(4);
 
-                            resNodeDangly->Color.R = (byte) (colour.X * 255);
-                            resNodeDangly->Color.G = (byte) (colour.Y * 255);
-                            resNodeDangly->Color.B = (byte) (colour.Z * 255);
 
-                            resNodeNineGrid->Color.R = (byte) (colour.X * 255);
-                            resNodeNineGrid->Color.G = (byte) (colour.Y * 255);
-                            resNodeNineGrid->Color.B = (byte) (colour.Z * 255);
+
                         }
                         else if (bubblesAtk2[k]->IsVisible)
                         {
@@ -154,8 +214,13 @@ namespace ChatBubbles
             {
                 if ( (DateTime.Now - _charDatas[i].MessageDateTime).TotalMilliseconds > (_timer * 950) || _charDatas[i].KillMe)
                 {
-                    PluginLog.Log($"{(DateTime.Now - _charDatas[i].MessageDateTime).TotalMilliseconds} > {_timer * 950}");
-                    PluginLog.Log($"Removing [{i}]: {_charDatas[i].Message.TextValue}");
+                    if (_debug)
+                    {
+                        PluginLog.Log(
+                            $"{(DateTime.Now - _charDatas[i].MessageDateTime).TotalMilliseconds} > {_timer * 950}");
+                        PluginLog.Log($"Removing [{i}]: {_charDatas[i].Message.TextValue}");
+                    }
+
                     _charDatas.RemoveAt(i);
                     i--;
                 }
