@@ -84,23 +84,34 @@ namespace ChatBubbles
             XivChatType.Ls6, XivChatType.Ls7, XivChatType.Ls8, XivChatType.FreeCompany, XivChatType.NoviceNetwork,
             XivChatType.CustomEmote, XivChatType.StandardEmote, XivChatType.Yell, XivChatType.CrossParty,
             XivChatType.PvPTeam,
-            XivChatType.CrossLinkShell1, XivChatType.None, XivChatType.None, XivChatType.None, XivChatType.None,
-            XivChatType.None, XivChatType.None, XivChatType.CrossLinkShell2, XivChatType.CrossLinkShell3,
+            XivChatType.CrossLinkShell1, XivChatType.Echo, XivChatType.None, XivChatType.None, XivChatType.None,
+            XivChatType.None, XivChatType.None, XivChatType.None, XivChatType.None, XivChatType.CrossLinkShell2, XivChatType.CrossLinkShell3,
             XivChatType.CrossLinkShell4,
             XivChatType.CrossLinkShell5, XivChatType.CrossLinkShell6, XivChatType.CrossLinkShell7,
             XivChatType.CrossLinkShell8
         };
-
-        private readonly bool[] _yesno =
+        
+         private readonly bool[] _yesno =
         {
             false, false, false, false, true,
             true, true, true, true, true,
             true, true, true, true, true,
             true, true, true, true, true,
             true, true, true, true, true,
-            true, false, false, false, false,
-            false, false, true, true, true,
-            true, true, true, true
+            true, true, false, false, false,
+            false, false, false, false, true,
+            true, true,true, true, true,
+            true
+        };
+
+        private readonly XivChatType[] _allowedChannels =
+            {
+            XivChatType.Say, XivChatType.Shout, XivChatType.TellOutgoing, XivChatType.TellIncoming, XivChatType.Party,
+            XivChatType.Alliance, XivChatType.Ls1, XivChatType.Ls2, XivChatType.Ls3, XivChatType.Ls4, XivChatType.Ls5,
+            XivChatType.Ls6, XivChatType.Ls7, XivChatType.Ls8, XivChatType.FreeCompany, XivChatType.NoviceNetwork,
+            XivChatType.CustomEmote, XivChatType.StandardEmote, XivChatType.Yell, XivChatType.CrossParty, XivChatType.CrossLinkShell1,
+            XivChatType.CrossLinkShell2, XivChatType.CrossLinkShell3, XivChatType.CrossLinkShell4, XivChatType.CrossLinkShell5,
+            XivChatType.CrossLinkShell6, XivChatType.CrossLinkShell7, XivChatType.CrossLinkShell8
         };
 
         private int bubbleNumber = 0;
@@ -148,6 +159,33 @@ namespace ChatBubbles
             _defaultScale = _configuration.DefaultScale;
             _switch = _configuration.Switch;
             _yalmCap = _configuration.YalmCap;
+
+            //Added two enums in dalamud update
+            if (_bubbleColours.Count == 39)
+            {
+                _bubbleColours.Insert(32, new Vector4(1, 1, 1, 0));
+                _bubbleColours.Insert(32, new Vector4(1, 1, 1, 0));
+                _bubbleColours2.Insert(32, new Vector4(0,0, 0, 0));
+                _bubbleColours2.Insert(32, new Vector4(0, 0, 0, 0));
+
+                UiColorPick[] _temp = new UiColorPick[_bubbleColours.Count];
+                for (int i =0; i<39; i++)
+                {
+                    if(i >= 32)
+                    {
+                        _temp[i+2] = _textColour[i];
+                    }
+                    else
+                    {
+                        _temp[i] = _textColour[i];
+                    }
+                }
+                _temp[32] =  new() { Choice = 0, Option = 0 };
+                _temp[33] = new() { Choice = 0, Option = 0 };
+
+                _textColour = _temp;
+            }
+
             while (_bubbleColours.Count < 39) _bubbleColours.Add(new Vector4(1,1,1,0));
             while (_bubbleColours2.Count < 39) _bubbleColours2.Add(new Vector4(0,0,0,0));
             
@@ -592,7 +630,8 @@ namespace ChatBubbles
             new() { Choice = 0, Option =0 }, new() { Choice = 0, Option =0 }, new () { Choice = 0, Option =0 },
             new() { Choice = 0, Option =0 }, new() { Choice = 0, Option =0 }, new () { Choice = 0, Option =0 },
             new() { Choice = 0, Option =0 }, new() { Choice = 0, Option =0 }, new () { Choice = 0, Option =0 },
-            new() { Choice = 0, Option =0 }, new() { Choice = 0, Option =0 }, new () { Choice = 0, Option =0 }
+            new() { Choice = 0, Option =0 }, new() { Choice = 0, Option =0 }, new () { Choice = 0, Option =0 },
+            new() { Choice = 0, Option =0 }, new() { Choice = 0, Option =0 }
         };
 
         public List<Vector4> BubbleColours { get; set; } = new List<Num.Vector4>();

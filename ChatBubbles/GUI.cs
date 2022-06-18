@@ -68,12 +68,12 @@ namespace ChatBubbles
                 ImGui.InputFloat("Players Bubble Scale", ref _bubbleSize);
                 if (ImGui.IsItemHovered())
                 {
-                    ImGui.SetTooltip("Scales player chat bubbles.");
+                    ImGui.SetTooltip("Scales player chat bubbles. ONLY WORKS IF DEFAULT UI IS NOT SET TO 100%!");
                 }
                 ImGui.InputFloat("NPC Bubble scale", ref _defaultScale);
                 if (ImGui.IsItemHovered())
                 {
-                    ImGui.SetTooltip("Scales NPC Chat bubbles.");
+                    ImGui.SetTooltip("Scales NPC Chat bubbles. ONLY WORKS IF DEFAULT UI IS NOT SET TO 100%!");
                 }
                 ImGui.InputInt("Yalm distance", ref _yalmCap);
                 if (ImGui.IsItemHovered())
