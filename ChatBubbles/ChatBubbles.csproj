@@ -6,7 +6,7 @@
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <Version>2.1.1.0</Version>
+        <Version>2.1.1.1</Version>
         <Configurations>Release;Debug</Configurations>
         <Platforms>AnyCPU</Platforms>
         <ProduceReferenceAssembly>false</ProduceReferenceAssembly>

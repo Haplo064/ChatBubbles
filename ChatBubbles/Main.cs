@@ -186,8 +186,8 @@ namespace ChatBubbles
                 _textColour = _temp;
             }
 
-            while (_bubbleColours.Count < 39) _bubbleColours.Add(new Vector4(1,1,1,0));
-            while (_bubbleColours2.Count < 39) _bubbleColours2.Add(new Vector4(0,0,0,0));
+            while (_bubbleColours.Count < 41) _bubbleColours.Add(new Vector4(1,1,1,0));
+            while (_bubbleColours2.Count < 41) _bubbleColours2.Add(new Vector4(0,0,0,0));
             
             var list = new List<UIColor>(Svc.dataManager.Excel.GetSheet<UIColor>()!.Distinct(new UIColorComparer()));
             list.Sort((a, b) =>
