@@ -7,21 +7,30 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<Version>2.1.1.2</Version>
 		<Configurations>Release;Debug</Configurations>
-        <Platforms>AnyCPU</Platforms>
+		<Platforms>x64</Platforms>
 		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 	</PropertyGroup>
 
 	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
 		<Optimize>false</Optimize>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<Content Include=".\images\*.png">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Visible>false</Visible>
+		</Content>
+	</ItemGroup>
+
 	<PropertyGroup>
 		<DalamudLibPath>$(APPDATA)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
 	</PropertyGroup>
 
 	<ItemGroup>
-        <Reference Include="Dalamud, Culture=neutral, PublicKeyToken=null">
+		<PackageReference Include="DalamudPackager" Version="2.1.8" />
+		<Reference Include="Dalamud">
 			<HintPath>$(DalamudLibPath)Dalamud.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
@@ -29,15 +38,15 @@
 			<HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
-        <Reference Include="ImGui.NET, Culture=neutral, PublicKeyToken=null">
+		<Reference Include="ImGui.NET">
 			<HintPath>$(DalamudLibPath)ImGui.NET.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
-        <Reference Include="ImGuiScene, Culture=neutral, PublicKeyToken=null">
+		<Reference Include="ImGuiScene">
 			<HintPath>$(DalamudLibPath)ImGuiScene.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
-        <Reference Include="Lumina, Culture=neutral, PublicKeyToken=null">
+		<Reference Include="Lumina">
 			<HintPath>$(DalamudLibPath)Lumina.dll</HintPath>
 			<Private>false</Private>
 		</Reference>

@@ -1,0 +1,15 @@
+{
+    "Author": "Haplo064",
+    "Name": "Chat Bubbles",
+    "Punchline": "Enables in-game chat bubbles.",
+    "Description": "Using native chat bubble display, see who is talking about what in a more natural fashion.",
+    "InternalName": "ChatBubbles",
+    "ApplicableVersion": "any",
+    "Tags": [
+        "UI",
+        "Roleplay",
+        "RP",
+        "Bubbles",
+        "Chat"
+    ]
+}
