@@ -15,32 +15,56 @@ namespace ChatBubbles
         {
             if (_config)
             {
-                ImGui.SetNextWindowSizeConstraints(new Num.Vector2(620, 650), new Num.Vector2(1920, 1080));
+                ImGui.SetNextWindowSizeConstraints(new Num.Vector2(620, 850), new Num.Vector2(1920, 1080));
                 ImGui.Begin("Chat Bubbles Config", ref _config);
                 
-                if (_debug)
-                {
-                    try
-                    {
-                        foreach (CharData cd in _charDatas)
-                        {
-                            ImGui.Text($"{(DateTime.Now - cd.MessageDateTime).TotalMilliseconds} | {cd.Message} | {cd.KillMe}");
-                        }
-
-                        ImGui.Text($"{_timer * 500}");
-                    }
-                    catch (Exception e)
-                    {
-                        //lol
-                    }
-                    ImGui.Text($"{_playerBubbleX}");
-                }
+                
                 ImGui.Checkbox("Show Bubbles", ref _switch);
                 if (ImGui.IsItemHovered())
                 {
                     ImGui.SetTooltip(
                         "This is here in case you used '/bub toggle' and forgot about doing it.");
                 }
+                ImGui.Checkbox("Hide Your Chat", ref _hide);
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip("Hides your character's bubble.");
+                }
+                ImGui.Checkbox("Debug Logging", ref _debug);
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(
+                        "Enable logging for debug purposes.\nOnly enable if you are going to share the dalamud log file in discord.");
+                }
+
+                if (_debug)
+                {
+                    ImGui.Text("DEBUG Info");
+                    ImGui.Text($"Player's bubble's position: {_playerBubbleX}");
+                    try
+                    {
+                        foreach (CharData cd in _charDatas)
+                        {
+                            ImGui.Text($"Time since last message: {(DateTime.Now - cd.MessageDateTime).TotalMilliseconds}");
+                            ImGui.Text($"Bubbles displayed: {cd.Message}");
+                            //TODO : unsure about what this is for now, need to check it out
+                            //ImGui.Text($"KillMe status: {cd.KillMe}");
+                        }
+
+                        // Unsure about why it's there
+                        //ImGui.Text($"{_timer * 500}");
+                    }
+                    catch (Exception e)
+                    {
+                        ImGui.Text($"Error while fetching config in debug: {e}");
+                    }
+                }
+
+                // SPACING
+                ImGui.NewLine();
+                ImGui.Separator();
+                // SPACING
+
                 ImGui.InputInt("Bubble Timer", ref _timer);
                 if (ImGui.IsItemHovered())
                 {
@@ -81,12 +105,9 @@ namespace ChatBubbles
                     ImGui.SetTooltip("Anything over this distance in Yalms will not be shown");
                 }
 
-                ImGui.Checkbox("Debug Logging", ref _debug);
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip(
-                        "Enable logging for debug purposes.\nOnly enable if you are going to share the dalamud log file in discord.");
-                }
+                // SPACING
+                ImGui.NewLine();
+                // SPACING
 
                 ImGui.RadioButton("Queue", ref _bubbleFunctionality, 0);
                 if (ImGui.IsItemHovered())
@@ -125,12 +146,6 @@ namespace ChatBubbles
                         ImGui.SetTooltip("How many bubbles can be queued to be seen per person.");
                     }
                 }
-
-                ImGui.Checkbox("Hide Your Chat", ref _hide);
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip("Hides your character's bubble.");
-                }
                 
                 ImGui.SameLine();
                 if (!pride)
@@ -148,6 +163,11 @@ namespace ChatBubbles
                 {
                     ImGui.SetTooltip(":O");
                 }
+
+
+                // SPACING
+                ImGui.NewLine();
+                // SPACING
 
                 var i = 0;
                 ImGui.Text("Enabled channels:");
@@ -173,7 +193,7 @@ namespace ChatBubbles
                         }
                         ImGui.SameLine();
                         var temp2 = _bubbleColours2[i];
-                        ImGui.ColorEdit4($"Bubble Colour2##{i}", ref temp2, ImGuiColorEditFlags.NoInputs|ImGuiColorEditFlags.NoLabel);
+                        ImGui.ColorEdit4($"Bubble tint##{i}", ref temp2, ImGuiColorEditFlags.NoInputs|ImGuiColorEditFlags.NoLabel);
                         if (ImGui.IsItemHovered())
                         {
                             ImGui.SetTooltip(
@@ -181,7 +201,7 @@ namespace ChatBubbles
                         }
                         ImGui.SameLine();
                         var temp = _bubbleColours[i];
-                        ImGui.ColorEdit4($"Bubble Colour##{i}", ref temp, ImGuiColorEditFlags.NoInputs|ImGuiColorEditFlags.NoLabel);
+                        ImGui.ColorEdit4($"Bubble background##{i}", ref temp, ImGuiColorEditFlags.NoInputs|ImGuiColorEditFlags.NoLabel);
                         if (ImGui.IsItemHovered())
                         {
                             ImGui.SetTooltip(
@@ -204,7 +224,21 @@ namespace ChatBubbles
                     i++;
                 }
 
+
+                
+
                 ImGui.Columns(1);
+
+
+                // SPACING
+                ImGui.NewLine();
+                // SPACING
+
+                ImGui.Separator();
+
+                // SPACING
+                ImGui.NewLine();
+                // SPACING
 
                 if (ImGui.Button("Save and Close Config"))
                 {
@@ -216,6 +250,9 @@ namespace ChatBubbles
                 ImGui.PushStyleColor(ImGuiCol.Button, 0xFF000000 | 0x005E5BFF);
                 ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0xDD000000 | 0x005E5BFF);
                 ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0xAA000000 | 0x005E5BFF);
+                ImGui.Text(" ");
+                ImGui.SameLine();
+
 
                 if (ImGui.Button("Buy Haplo a Hot Chocolate"))
                 {
@@ -223,10 +260,9 @@ namespace ChatBubbles
                 }
 
                 ImGui.PopStyleColor(3);
-
                 ImGui.End();
 
-                if (dirtyHack > 100)
+                if (dirtyHack > 60)
                 {
                     SaveConfig();
                     dirtyHack = 0;

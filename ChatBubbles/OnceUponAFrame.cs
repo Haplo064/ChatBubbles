@@ -179,7 +179,7 @@ namespace ChatBubbles
                 }
                 catch (Exception e)
                 {
-                    //lol
+                    PluginLog.Log($"Error while updating frame: {e}");
                 }
 
                 if (addonPtr2 != IntPtr.Zero)
@@ -206,7 +206,7 @@ namespace ChatBubbles
             }
             catch (Exception e)
             {
-                //"fix"
+                PluginLog.Log($"Error before updating frame: {e}");
             }
             
             //Cleaning charDatas

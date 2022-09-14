@@ -63,7 +63,8 @@ namespace ChatBubbles
         private int dirtyHack = 0;
         private bool _config = false;
         private bool _debug = false;
-        private int pauser = 0;
+        //TODO : check pauser usage ; uncomment below if found
+        //private int pauser = 0;
         //#Pride
         private bool f1 = false;
         private bool f2 = false;
@@ -114,7 +115,8 @@ namespace ChatBubbles
             XivChatType.CrossLinkShell6, XivChatType.CrossLinkShell7, XivChatType.CrossLinkShell8
         };
 
-        private int bubbleNumber = 0;
+        //TODO : check bubbleNumber usage ; uncomment below if found
+        //private int bubbleNumber = 0;
 
         private bool[] bubbleActive = {false, false, false, false, false, false, false, false, false, false, false};
         private XivChatType[] bubbleActiveType = {XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug, XivChatType.Debug};
