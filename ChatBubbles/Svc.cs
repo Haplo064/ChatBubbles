@@ -15,7 +15,6 @@ using Dalamud.Game.Gui.PartyFinder;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.Game.Libc;
 using Dalamud.Game.Network;
-using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 
@@ -23,7 +22,8 @@ namespace ChatBubbles
 {
     public class Svc
     {
-	    [PluginService] static internal DalamudPluginInterface pluginInterface { get; private set; }
+		#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        [PluginService] static internal DalamudPluginInterface pluginInterface { get; private set; }
 		[PluginService] static internal BuddyList buddyList { get; private set; }
 		[PluginService] static internal ChatGui chatGui { get; private set; }
 		[PluginService] static internal ChatHandlers chatHandlers { get; private set; }
@@ -42,9 +42,9 @@ namespace ChatBubbles
 		[PluginService] static internal ObjectTable objectTable { get; private set; }
 		[PluginService] static internal PartyFinderGui partyFinderGui { get; private set; }
 		[PluginService] static internal PartyList partyList { get; private set; }
-		[PluginService] static internal SeStringManager seStringManager { get; private set; }
 		[PluginService] static internal SigScanner sigScannerD { get; private set; }
 		[PluginService] static internal TargetManager targetManager { get; private set; }
 		[PluginService] static internal ToastGui toastGui { get; private set; }
-	}
+		#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    }
 }

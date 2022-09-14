@@ -222,7 +222,7 @@ namespace ChatBubbles
             UpdateBubble updateBubbleFunc = UpdateBubbleFuncFunc;
             try
             {
-                _updateBubbleFuncHook = new Hook<UpdateBubble>(updateBubblePtr + 0x9, updateBubbleFunc);
+                _updateBubbleFuncHook = Hook<UpdateBubble>.FromAddress(updateBubblePtr + 0x9, updateBubbleFunc);
                 _updateBubbleFuncHook.Enable();
                 if (_debug) PluginLog.Log("GOOD");
             }
@@ -234,15 +234,13 @@ namespace ChatBubbles
             OpenBubble openBubbleFunc = OpenBubbleFuncFunc;
             try
             {
-                _openBubbleFuncHook = new Hook<OpenBubble>(openBubblePtr, openBubbleFunc);
+                _openBubbleFuncHook = Hook<OpenBubble>.FromAddress(openBubblePtr, openBubbleFunc);
                 _openBubbleFuncHook.Enable();
                 if (_debug) PluginLog.Log("GOOD2");
             }
             catch (Exception e)
             { PluginLog.Log("BAD\n" + e); }
         }
-        
-        
 
         private Vector4 ConvertUIColorToColor(UIColor uiColor)
         {
