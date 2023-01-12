@@ -254,9 +254,9 @@ namespace ChatBubbles
                 ImGui.SameLine();
 
 
-                if (ImGui.Button("Buy Haplo a Hot Chocolate"))
+                if (ImGui.Button("Buy Khayle some good croissants"))
                 {
-                    Process.Start(new ProcessStartInfo {FileName = "https://ko-fi.com/haplo", UseShellExecute = true});
+                    Process.Start(new ProcessStartInfo {FileName = "https://ko-fi.com/khayle", UseShellExecute = true});
                 }
 
                 ImGui.PopStyleColor(3);
