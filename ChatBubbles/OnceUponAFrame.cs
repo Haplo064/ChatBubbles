@@ -182,10 +182,15 @@ namespace ChatBubbles
                     PluginLog.Log($"Error while updating frame: {e}");
                 }
 
-                if (addonPtr2 != IntPtr.Zero)
+                if (addonPtr2 != IntPtr.Zero && bubblesAtk2 is not null)
                 {
                     for (int u = 0; u < 10; u++)
                     {
+                        if (bubblesAtk2[u] is null)
+                        {
+                            break;
+                        }
+
                         if (!bubblesAtk2[u]->IsVisible)
                         {
                             bubbleActive[u] = false;
