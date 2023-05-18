@@ -52,7 +52,18 @@ namespace ChatBubbles
             }
             else
             {
-                playerPayload = sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload ?? cmessage.Payloads.FirstOrDefault(x => x is PlayerPayload) as PlayerPayload;
+                if(type == XivChatType.StandardEmote)
+				{
+					playerPayload = sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload ?? cmessage.Payloads.FirstOrDefault(x => x is PlayerPayload) as PlayerPayload;
+				}
+                else
+				{
+					playerPayload = sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload; 
+                    if (type == XivChatType.CustomEmote)
+					{
+						fmessage.Append(playerPayload.PlayerName);
+					}
+				}
             }
 
             fmessage.Append(cmessage);
