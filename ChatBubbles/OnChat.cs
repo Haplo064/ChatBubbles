@@ -21,12 +21,26 @@ namespace ChatBubbles
             var fmessage = new SeString(new List<Payload>());
             var nline = new SeString(new List<Payload>());
             nline.Payloads.Add(new TextPayload("\n"));
-            
+
 
             //Stolen from Dragon (SheepGoMeh)
             PlayerPayload playerPayload;
 
-            if (sender.ToString() == Svc.clientState.LocalPlayer?.Name.TextValue)
+            List<char> toRemove = new()
+            {
+              //src: https://na.finalfantasyxiv.com/lodestone/character/10080203/blog/2891974/
+              '','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','',
+            };
+
+            string sanitized = sender.ToString();
+
+            foreach (var c in toRemove)
+            {
+                // Removes all special characters related to Party List numbering
+                sanitized = sanitized.Replace(c.ToString(), string.Empty);
+            }
+
+            if (sanitized == Svc.clientState.LocalPlayer?.Name.TextValue)
             {
                 playerPayload = new PlayerPayload(Svc.clientState.LocalPlayer.Name.TextValue, Svc.clientState.LocalPlayer.HomeWorld.Id);
                 if (type == XivChatType.CustomEmote)
@@ -40,7 +54,7 @@ namespace ChatBubbles
             {
                 playerPayload = sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload ?? cmessage.Payloads.FirstOrDefault(x => x is PlayerPayload) as PlayerPayload;
             }
-            
+
             fmessage.Append(cmessage);
             var isEmoteType = type is XivChatType.CustomEmote or XivChatType.StandardEmote;
             if (isEmoteType)
@@ -75,7 +89,7 @@ namespace ChatBubbles
             }
 
             fmessage.Payloads.Insert(0,
-                new UIForegroundPayload((ushort) _textColour[_order.IndexOf(type)].Option));
+                new UIForegroundPayload((ushort)_textColour[_order.IndexOf(type)].Option));
             fmessage.Payloads.Add(new UIForegroundPayload(0));
 
             if (actr == 0) return;
@@ -84,7 +98,7 @@ namespace ChatBubbles
             var add = 0;
             var bn = -1;
             var timeTake = 0;
-            
+
             foreach (var cd in _charDatas)
             {
                 if (_debug)
@@ -103,14 +117,14 @@ namespace ChatBubbles
                 {
                     if (_textScale)
                     {
-                        var val = (double) (cd.Message?.TextValue + cmessage.TextValue).Length / 10;
+                        var val = (double)(cd.Message?.TextValue + cmessage.TextValue).Length / 10;
                         if ((_timer * val) < _timer)
                         {
                             add += _timer;
                         }
                         else
                         {
-                            add += (int) (_timer * val);
+                            add += (int)(_timer * val);
                         }
                     }
                     else
@@ -121,15 +135,16 @@ namespace ChatBubbles
 
                 update++;
                 bn = cd.BubbleNumber;
-                
+
                 //queue
                 if (_bubbleFunctionality == 0)
                 {
                     timeTake = (int)(DateTime.Now - cd.MessageDateTime).TotalMilliseconds;
                     continue;
                 }
-                
-                switch (_bubbleFunctionality) {
+
+                switch (_bubbleFunctionality)
+                {
                     case 1: // stack
                         cd.Message?.Append(nline);
                         cd.Message?.Append(fmessage);
@@ -184,8 +199,8 @@ namespace ChatBubbles
                     return;
                 }
                 time = new TimeSpan(0, 0, 0, add, -timeTake);
-                
-                
+
+
                 _charDatas.Add(new CharData
                 {
                     ActorId = actr,
@@ -195,7 +210,7 @@ namespace ChatBubbles
                     Type = type,
                     BubbleNumber = bn
                 });
-                
+
             }
         }
     }
