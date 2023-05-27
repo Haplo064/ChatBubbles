@@ -75,6 +75,17 @@ namespace ChatBubbles
             }
 
             var pName = playerPayload == default(PlayerPayload) ? Svc.clientState.LocalPlayer.Name.TextValue : playerPayload.PlayerName;
+            var sName = sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload;
+            var senderName = sName?.PlayerName != null ? sName.PlayerName : pName;
+
+            if(!Svc.dutyState.IsDutyStarted)
+            {
+			    PluginLog.Log($"sName={senderName}");
+			    if (_partyOnly && !IsPartyMember(senderName)) return;
+			    if (_fcOnly && !IsFC(senderName)) return;
+			    if (_friendsOnly && !IsFriend(senderName)) return; 
+            }
+
             var actr = GetActorId(pName);
             //Getting Distance!
             var x = GetActorDistance(pName);

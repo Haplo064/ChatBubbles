@@ -23,6 +23,9 @@ using Balloon = FFXIVClientStructs.FFXIV.Client.Game.Balloon;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Framework = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework;
 using Num = System.Numerics;
+using Dalamud.Utility;
+using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.DutyState;
 
 namespace ChatBubbles
 {
@@ -50,6 +53,9 @@ namespace ChatBubbles
         private int _queue;
         private int _bubbleFunctionality;
         private bool _hide;
+        private bool _friendsOnly;
+        private bool _fcOnly;
+        private bool _partyOnly;
         private bool _textScale;
         public List<Num.Vector4> _bubbleColours;
         public List<Num.Vector4> _bubbleColours2;
@@ -153,6 +159,9 @@ namespace ChatBubbles
             _queue = _configuration.Queue;
             _bubbleFunctionality = _configuration.BubbleFunctionality;
             _hide = _configuration.Hide;
+            _fcOnly = _configuration.fcOnly;
+            _partyOnly = _configuration.partyOnly;
+            _friendsOnly = _configuration.friendsOnly;
             _textScale = _configuration.TextScale;
             _bubbleColours = _configuration.BubbleColours;
             _bubbleColours2 = _configuration.BubbleColours2;
@@ -261,6 +270,9 @@ namespace ChatBubbles
             _configuration.Queue = _queue;
             _configuration.BubbleFunctionality = _bubbleFunctionality;
             _configuration.Hide = _hide;
+            _configuration.fcOnly = _fcOnly;
+            _configuration.friendsOnly = _friendsOnly;
+            _configuration.partyOnly = _partyOnly;
             _configuration.BubbleColours = _bubbleColours;
             _configuration.BubbleColours2 = _bubbleColours2;
             _configuration.TextScale = false;
@@ -554,6 +566,56 @@ namespace ChatBubbles
             return 0;
         }
 
+        private bool IsFriend(string nameInput)
+        {
+            if (nameInput == Svc.clientState.LocalPlayer?.Name.TextValue) return true;
+
+            foreach (var t in Svc.objectTable)
+            {
+                if (!(t is PlayerCharacter pc)) continue;
+				PluginLog.Log($"Friend : {pc.Name.TextValue} = {pc.StatusFlags.HasFlag(StatusFlags.Friend)}");
+                if (pc.Name.TextValue == nameInput)
+                {
+                    return pc.StatusFlags.HasFlag(StatusFlags.Friend);
+                }
+            }
+            return false;
+        }
+
+        private bool IsPartyMember(string nameInput)
+        {
+            if (nameInput == Svc.clientState.LocalPlayer?.Name.TextValue) return true;
+
+            foreach (var t in Svc.objectTable)
+            {
+                if (!(t is PlayerCharacter pc)) continue;
+                if (pc.Name.TextValue == nameInput)
+                {
+                    PluginLog.Log($"Party : {pc.Name.TextValue} = {pc.StatusFlags.HasFlag(StatusFlags.PartyMember)}");
+                    return pc.StatusFlags.HasFlag(StatusFlags.PartyMember);
+                }
+            }
+            return false;
+        }
+
+        private bool IsFC(string nameInput)
+        { 
+            if (nameInput == Svc.clientState.LocalPlayer?.Name.TextValue) return true;
+
+			foreach (var t in Svc.objectTable)
+            { 
+                if (!(t is PlayerCharacter pc)) continue;
+                if (pc.Name.TextValue == nameInput)
+
+                {
+					PluginLog.Log($"Self FC : {Svc.clientState.LocalPlayer?.CompanyTag.TextValue}");
+					PluginLog.Log($"Not-self FC: {pc.CompanyTag.TextValue}");
+					return Svc.clientState.LocalPlayer?.CompanyTag.TextValue == pc.CompanyTag.TextValue;
+                }
+            }
+            return false;
+        }
+
         private int GetActorDistance(string name)
         {
             if (name == Svc.clientState.LocalPlayer?.Name.TextValue) return 0;
@@ -608,8 +670,11 @@ namespace ChatBubbles
         public List<XivChatType> Channels { get; set; } = new() {XivChatType.Say};
         public int Timer { get; set; } = 7;
         public int BubbleFunctionality { get; set; } = 0;
-        public bool Hide { get; set; } = false;
-        public bool TextScale { get; set; } = false;
+		public bool Hide { get; set; } = false;
+		public bool friendsOnly { get; set; } = false;
+		public bool fcOnly { get; set; } = false;
+		public bool partyOnly { get; set; } = false;
+		public bool TextScale { get; set; } = false;
         public bool SelfLock { get; set; } = false;
         public float BubbleSize { get; set; } = 1f;
         public float DefaultScale { get; set; } = 1f;

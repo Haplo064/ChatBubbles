@@ -15,7 +15,7 @@ namespace ChatBubbles
         {
             if (_config)
             {
-                ImGui.SetNextWindowSizeConstraints(new Num.Vector2(620, 850), new Num.Vector2(1920, 1080));
+                ImGui.SetNextWindowSizeConstraints(new Num.Vector2(600, 850), new Num.Vector2(1920, 1080));
                 ImGui.Begin("Chat Bubbles Config", ref _config);
                 
                 
@@ -24,11 +24,28 @@ namespace ChatBubbles
                 {
                     ImGui.SetTooltip(
                         "This is here in case you used '/bub toggle' and forgot about doing it.");
-                }
-                ImGui.Checkbox("Hide Your Chat", ref _hide);
+				}
+				ImGui.Checkbox("Hide Your Chat", ref _hide);
                 if (ImGui.IsItemHovered())
                 {
-                    ImGui.SetTooltip("Hides your character's bubble.");
+                    ImGui.SetTooltip("Hides your own character's bubbles.");
+                }
+                ImGui.Checkbox("Display friends only", ref _friendsOnly);
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip("Hides the bubbles from every character that isn't in your friend list. Disables when in an instance.");
+				}
+				ImGui.SameLine();
+				ImGui.Checkbox("Display FC only", ref _fcOnly);
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip("Hides the bubbles from every character that isn't in your Free Company. Disables when in an instance.");
+				}
+				ImGui.SameLine();
+				ImGui.Checkbox("Display party only", ref _partyOnly);
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip("Hides the bubbles from every character that isn't in your current party. Disables when in an instance.");
                 }
                 ImGui.Checkbox("Debug Logging", ref _debug);
                 if (ImGui.IsItemHovered())

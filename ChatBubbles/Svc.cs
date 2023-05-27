@@ -9,6 +9,7 @@ using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Party;
 using Dalamud.Game.Command;
+using Dalamud.Game.DutyState;
 using Dalamud.Game.Gui;
 using Dalamud.Game.Gui.FlyText;
 using Dalamud.Game.Gui.PartyFinder;
@@ -30,6 +31,7 @@ namespace ChatBubbles
 		[PluginService] static internal ClientState clientState { get; private set; }
 		[PluginService] static internal CommandManager commandManager { get; private set; }
 		[PluginService] static internal Condition condition { get; private set; }
+		[PluginService] static internal DutyState dutyState { get; private set; }
 		[PluginService] static internal DataManager dataManager { get; private set; }
 		[PluginService] static internal FateTable fateTable { get; private set; }
 		[PluginService] static internal FlyTextGui flyTextGui { get; private set; }
