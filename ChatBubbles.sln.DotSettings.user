@@ -10,4 +10,7 @@
   &lt;Assembly Path="C:\Users\Haplo\AppData\Roaming\XIVLauncher\addon\Hooks\dev\Dalamud.dll" /&gt;&#xD;
   &lt;Assembly Path="C:\Users\Haplo\AppData\Roaming\XIVLauncher\addon\Hooks\dev\Lumina.Excel.dll" /&gt;&#xD;
   &lt;Assembly Path="C:\Users\Haplo\AppData\Roaming\XIVLauncher\addon\Hooks\dev\FFXIVClientStructs.dll" /&gt;&#xD;
-&lt;/AssemblyExplorer&gt;</s:String></wpf:ResourceDictionary>
+&lt;/AssemblyExplorer&gt;</s:String>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=fmessage/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=nline/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=yalm/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>

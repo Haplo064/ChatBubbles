@@ -165,15 +165,15 @@ namespace ChatBubbles
                 }
                 
                 ImGui.SameLine();
-                if (!pride)
+                if (!_pride)
                 {
                     ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0);
-                    ImGui.Checkbox("Pride", ref pride);
+                    ImGui.Checkbox("Pride", ref _pride);
                     ImGui.PopStyleVar();
                 }
                 else
                 {
-                    ImGui.Checkbox("Pride", ref pride);
+                    ImGui.Checkbox("Pride", ref _pride);
                 }
 
                 if (ImGui.IsItemHovered())
@@ -279,13 +279,13 @@ namespace ChatBubbles
                 ImGui.PopStyleColor(3);
                 ImGui.End();
 
-                if (dirtyHack > 60)
+                if (_dirtyHack > 60)
                 {
                     SaveConfig();
-                    dirtyHack = 0;
+                    _dirtyHack = 0;
                 }
 
-                dirtyHack++;
+                _dirtyHack++;
 
             }
 

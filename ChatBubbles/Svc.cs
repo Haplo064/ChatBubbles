@@ -18,35 +18,38 @@ using Dalamud.Game.Libc;
 using Dalamud.Game.Network;
 using Dalamud.IoC;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 
 namespace ChatBubbles
 {
     public class Svc
     {
 		#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+	    [PluginService] static internal IGameInteropProvider gameInteropProvider { get; private set; }
         [PluginService] static internal DalamudPluginInterface pluginInterface { get; private set; }
-		[PluginService] static internal BuddyList buddyList { get; private set; }
-		[PluginService] static internal ChatGui chatGui { get; private set; }
-		[PluginService] static internal ChatHandlers chatHandlers { get; private set; }
-		[PluginService] static internal ClientState clientState { get; private set; }
-		[PluginService] static internal CommandManager commandManager { get; private set; }
-		[PluginService] static internal Condition condition { get; private set; }
-		[PluginService] static internal DutyState dutyState { get; private set; }
-		[PluginService] static internal DataManager dataManager { get; private set; }
-		[PluginService] static internal FateTable fateTable { get; private set; }
-		[PluginService] static internal FlyTextGui flyTextGui { get; private set; }
-		[PluginService] static internal Framework framework { get; private set; }
-		[PluginService] static internal GameGui gameGui { get; private set; }
-		[PluginService] static internal GameNetwork gameNetwork { get; private set; }
-		[PluginService] static internal JobGauges jobGauges { get; private set; }
-		[PluginService] static internal KeyState keyState { get; private set; }
-		[PluginService] static internal LibcFunction libcFunction { get; private set; }
-		[PluginService] static internal ObjectTable objectTable { get; private set; }
-		[PluginService] static internal PartyFinderGui partyFinderGui { get; private set; }
-		[PluginService] static internal PartyList partyList { get; private set; }
-		[PluginService] static internal SigScanner sigScannerD { get; private set; }
-		[PluginService] static internal TargetManager targetManager { get; private set; }
-		[PluginService] static internal ToastGui toastGui { get; private set; }
+		[PluginService] static internal IBuddyList buddyList { get; private set; }
+		[PluginService] static internal IPluginLog pluginLog { get; private set; }
+		[PluginService] static internal IChatGui chatGui { get; private set; }
+		//[PluginService] static internal ChatHandlers chatHandlers { get; private set; }
+		[PluginService] static internal IClientState clientState { get; private set; }
+		[PluginService] static internal ICommandManager commandManager { get; private set; }
+		[PluginService] static internal ICondition condition { get; private set; }
+		[PluginService] static internal IDutyState dutyState { get; private set; }
+		[PluginService] static internal IDataManager dataManager { get; private set; }
+		[PluginService] static internal IFateTable fateTable { get; private set; }
+		[PluginService] static internal IFlyTextGui flyTextGui { get; private set; }
+		[PluginService] static internal IFramework framework { get; private set; }
+		[PluginService] static internal IGameGui gameGui { get; private set; }
+		[PluginService] static internal IGameNetwork gameNetwork { get; private set; }
+		[PluginService] static internal IJobGauges jobGauges { get; private set; }
+		[PluginService] static internal IKeyState keyState { get; private set; }
+		[PluginService] static internal ILibcFunction libcFunction { get; private set; }
+		[PluginService] static internal IObjectTable objectTable { get; private set; }
+		[PluginService] static internal IPartyFinderGui partyFinderGui { get; private set; }
+		[PluginService] static internal IPartyList partyList { get; private set; }
+		[PluginService] static internal ISigScanner sigScannerD { get; private set; }
+		[PluginService] static internal ITargetManager targetManager { get; private set; }
+		[PluginService] static internal IToastGui toastGui { get; private set; }
 		#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     }
 }

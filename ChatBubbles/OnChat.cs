@@ -32,7 +32,7 @@ namespace ChatBubbles
               '','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','',
             };
 
-            string sanitized = sender.ToString();
+            var sanitized = sender.ToString();
 
             foreach (var c in toRemove)
             {
@@ -74,40 +74,28 @@ namespace ChatBubbles
                 fmessage.Payloads.Add(new EmphasisItalicPayload(false));
             }
 
-            var pName = playerPayload == default(PlayerPayload) ? Svc.clientState.LocalPlayer.Name.TextValue : playerPayload.PlayerName;
+            var pName = playerPayload == default(PlayerPayload) ? Svc.clientState.LocalPlayer?.Name.TextValue : playerPayload.PlayerName;
             var sName = sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload;
             var senderName = sName?.PlayerName != null ? sName.PlayerName : pName;
 
             if(!Svc.dutyState.IsDutyStarted)
             {
-			    PluginLog.Log($"sName={senderName}");
 			    if (_partyOnly && !IsPartyMember(senderName)) return;
 			    if (_fcOnly && !IsFC(senderName)) return;
 			    if (_friendsOnly && !IsFriend(senderName)) return; 
             }
 
             var actr = GetActorId(pName);
-            //Getting Distance!
             var x = GetActorDistance(pName);
             if (x > _yalmCap) return;
 
-            if (_debug)
-            {
-                //PluginLog.Log($"Type={type}");
-                //PluginLog.Log($"Sender={pName}");
-                //PluginLog.Log($"Message Raw={cmessage.TextValue}");
-                //PluginLog.Log($"ActorID={actr}");
-                //PluginLog.Log($"--------------");
-                //foreach (Payload x in cmessage.Payloads)
-                //{
-                //    PluginLog.Log($"TYPE: {x.Type}");
-                //}
-            }
-
             if (type == XivChatType.TellOutgoing)
             {
-                actr = Svc.clientState.LocalPlayer.ObjectId;
-                pName = Svc.clientState.LocalPlayer.Name.TextValue;
+                if (Svc.clientState.LocalPlayer != null)
+                {
+                    actr = Svc.clientState.LocalPlayer.ObjectId;
+                    pName = Svc.clientState.LocalPlayer.Name.TextValue;
+                }
             }
 
             fmessage.Payloads.Insert(0,
@@ -129,11 +117,6 @@ namespace ChatBubbles
                 }
 
                 if (cd.ActorId != actr) continue;
-                if (_debug)
-                {
-                    PluginLog.Log("Priors found");
-                    PluginLog.Log($"Setting BN to {cd.BubbleNumber}");
-                }
 
                 if (timeTake == 0)
                 {
@@ -196,10 +179,6 @@ namespace ChatBubbles
 
             if (update == 0)
             {
-                if (_debug)
-                {
-                    //PluginLog.Log("Adding new one");
-                }
                 _charDatas.Add(new CharData
                 {
                     ActorId = actr,
@@ -211,11 +190,6 @@ namespace ChatBubbles
             }
             else
             {
-                if (_debug)
-                {
-                    //PluginLog.Log(DateTime.Now.Add(time).ToString(CultureInfo.CurrentCulture));
-                }
-
                 if (update >= _queue)
                 {
                     return;
