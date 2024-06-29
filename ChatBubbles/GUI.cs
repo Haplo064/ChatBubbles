@@ -24,12 +24,19 @@ namespace ChatBubbles
                 {
                     ImGui.SetTooltip(
                         "This is here in case you used '/bub toggle' and forgot about doing it.");
-				}
-				ImGui.Checkbox("Hide Your Chat", ref _hide);
+                }
+                ImGui.SameLine();
+                ImGui.Checkbox("Hide Your Chat", ref _hide);
                 if (ImGui.IsItemHovered())
                 {
                     ImGui.SetTooltip("Hides your own character's bubbles.");
                 }
+                //ImGui.SameLine();
+                //ImGui.Checkbox("Ass Bubbles", ref _assBubbles);
+                //if (ImGui.IsItemHovered())
+                //{
+                //    ImGui.SetTooltip("Oh no, ass bubbles are back!");
+                //}
                 ImGui.Checkbox("Display friends only", ref _friendsOnly);
                 if (ImGui.IsItemHovered())
                 {

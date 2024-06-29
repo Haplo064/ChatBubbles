@@ -14,7 +14,7 @@ namespace ChatBubbles
     public unsafe partial class ChatBubbles : IDalamudPlugin
     {
         // What to do with chat messages
-        private void Chat_OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString cmessage, ref bool isHandled)
+        private void Chat_OnChatMessage(XivChatType type, int senderId, ref SeString sender, ref SeString cmessage, ref bool isHandled)
         {
             if (isHandled) return;
             if (!_channels.Contains(type)) return;
@@ -40,13 +40,13 @@ namespace ChatBubbles
                 sanitized = sanitized.Replace(c.ToString(), string.Empty);
             }
 
-            if (sanitized == Svc.clientState.LocalPlayer?.Name.TextValue)
+            if (sanitized == Services.ClientState.LocalPlayer?.Name.TextValue)
             {
-                playerPayload = new PlayerPayload(Svc.clientState.LocalPlayer.Name.TextValue, Svc.clientState.LocalPlayer.HomeWorld.Id);
+                playerPayload = new PlayerPayload(Services.ClientState.LocalPlayer.Name.TextValue, Services.ClientState.LocalPlayer.HomeWorld.Id);
                 if (type == XivChatType.CustomEmote)
                 {
                     var playerName = new SeString(new List<Payload>());
-                    playerName.Payloads.Add(new TextPayload(Svc.clientState.LocalPlayer.Name.TextValue));
+                    playerName.Payloads.Add(new TextPayload(Services.ClientState.LocalPlayer.Name.TextValue));
                     fmessage.Append(playerName);
                 }
             }
@@ -74,11 +74,11 @@ namespace ChatBubbles
                 fmessage.Payloads.Add(new EmphasisItalicPayload(false));
             }
 
-            var pName = playerPayload == default(PlayerPayload) ? Svc.clientState.LocalPlayer?.Name.TextValue : playerPayload.PlayerName;
+            var pName = playerPayload == default(PlayerPayload) ? Services.ClientState.LocalPlayer?.Name.TextValue : playerPayload.PlayerName;
             var sName = sender.Payloads.SingleOrDefault(x => x is PlayerPayload) as PlayerPayload;
             var senderName = sName?.PlayerName != null ? sName.PlayerName : pName;
 
-            if(!Svc.dutyState.IsDutyStarted)
+            if(!Services.DutyState.IsDutyStarted)
             {
 			    if (_partyOnly && !IsPartyMember(senderName)) return;
 			    if (_fcOnly && !IsFC(senderName)) return;
@@ -91,10 +91,10 @@ namespace ChatBubbles
 
             if (type == XivChatType.TellOutgoing)
             {
-                if (Svc.clientState.LocalPlayer != null)
+                if (Services.ClientState.LocalPlayer != null)
                 {
-                    actr = Svc.clientState.LocalPlayer.ObjectId;
-                    pName = Svc.clientState.LocalPlayer.Name.TextValue;
+                    actr = Services.ClientState.LocalPlayer.EntityId;
+                    pName = Services.ClientState.LocalPlayer.Name.TextValue;
                 }
             }
 

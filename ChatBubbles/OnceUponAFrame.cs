@@ -13,8 +13,9 @@ namespace ChatBubbles
         {
             try
             {
+                // Populate the miniTalks if there are any bubbles 
                 var addonPtr2 = IntPtr.Zero;
-                addonPtr2 = Svc.gameGui.GetAddonByName("_MiniTalk", 1);
+                addonPtr2 = Services.GameGui.GetAddonByName("_MiniTalk", 1);
                 if (addonPtr2 != IntPtr.Zero)
                 {
                     AddonMiniTalk* miniTalk = (AddonMiniTalk*) addonPtr2;
@@ -46,7 +47,7 @@ namespace ChatBubbles
                         {
                             break;
                         }
-                        if (_bubblesAtk2[k]->IsVisible && _bubbleActive[k])
+                        if (_bubblesAtk2[k]->IsVisible() && _bubbleActive[k])
                         {
                             if (_playerBubble == k && _selfLock)
                             {
@@ -61,6 +62,7 @@ namespace ChatBubbles
                             var colour = GetBubbleColour(_bubbleActiveType[k]);
                             var colour2 = GetBubbleColour2(_bubbleActiveType[k]);
 
+                            // Pride mode, relic haplo code
                             if (!_pride)
                             {
                                     _bubblesAtk2[k]->AddRed = (short) (colour2.X * 255);
@@ -132,8 +134,9 @@ namespace ChatBubbles
 
                             _bubblesAtk2[k]->ScaleX = _bubbleSize;
                             _bubblesAtk2[k]->ScaleY = _bubbleSize;
+
                         }
-                        else if (_bubblesAtk2[k]->IsVisible)
+                        else if (_bubblesAtk2[k]->IsVisible())
                         {
                             _bubblesAtk2[k]->AddRed = 0;
                             _bubblesAtk2[k]->AddBlue = 0;
@@ -141,8 +144,10 @@ namespace ChatBubbles
                             _bubblesAtk2[k]->ScaleX = _defaultScale;
                             _bubblesAtk2[k]->ScaleY = _defaultScale;
 
-                            var resNodeNineGrid = _bubblesAtk2[k]->GetComponent()->UldManager.SearchNodeById(5);
-                            var resNodeDangly = _bubblesAtk2[k]->GetComponent()->UldManager.SearchNodeById(4);
+                            var component = _bubblesAtk2[k]->GetComponent();
+                            ref var uldManager = ref component->UldManager;
+                            var resNodeNineGrid = uldManager.SearchNodeById(5);
+                            var resNodeDangly = uldManager.SearchNodeById(4);
 
                             resNodeDangly->Color.R = (byte) (255);
                             resNodeDangly->Color.G = (byte) (255);
@@ -155,7 +160,7 @@ namespace ChatBubbles
                 }
                 catch (Exception e)
                 {
-                    Svc.pluginLog.Error($"Error while updating frame: {e}");
+                    Services.PluginLog.Error($"Error while updating frame: {e}");
                 }
 
                 if (addonPtr2 != IntPtr.Zero && _bubblesAtk2 is not null)
@@ -167,7 +172,7 @@ namespace ChatBubbles
                             break;
                         }
 
-                        if (!_bubblesAtk2[u]->IsVisible)
+                        if (!_bubblesAtk2[u]->IsVisible())
                         {
                             _bubbleActive[u] = false;
                             _bubbleActiveType[u] = XivChatType.Debug;
@@ -175,7 +180,7 @@ namespace ChatBubbles
 
                         if (_playerBubble < 10)
                         {
-                            if (!_bubblesAtk2[_playerBubble]->IsVisible)
+                            if (!_bubblesAtk2[_playerBubble]->IsVisible())
                             {
                                 _playerBubble = 99;
                                 _playerBubbleX = 0;
@@ -187,7 +192,7 @@ namespace ChatBubbles
             }
             catch (Exception e)
             {
-                Svc.pluginLog.Error($"Error before updating frame: {e}");
+                Services.PluginLog.Error($"Error before updating frame: {e}");
             }
             
             //Cleaning charDatas

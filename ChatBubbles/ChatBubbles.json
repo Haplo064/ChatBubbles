@@ -1,18 +1,19 @@
 {
-    "Author": "Haplo064, Khayle",
-    "Name": "Chat Bubbles",
-    "Punchline": "Enables in-game chat bubbles.",
-    "Description": "Using native chat bubble display, see who is talking about what in a more natural fashion.",
-    "InternalName": "ChatBubbles",
-    "ApplicableVersion": "any",
-    "RepoUrl": "https://github.com/Haplo064/ChatBubbles",
-    "IconUrl": "https://raw.githubusercontent.com/Haplo064/ChatBubbles/main/ChatBubbles/images/icon.png",
-    "ImageUrls": ["https://raw.githubusercontent.com/Haplo064/ChatBubbles/main/ChatBubbles/images/image1.png", "https://raw.githubusercontent.com/Haplo064/ChatBubbles/main/ChatBubbles/images/image2.png"],
-    "Tags": [
-        "UI",
-        "Roleplay",
-        "RP",
-        "Bubbles",
-        "Chat"
-    ]
+  "Author": "Haplo064, Khayle",
+  "Name": "Chat Bubbles",
+  "Punchline": "Enables in-game chat bubbles.",
+  "Description": "Using native chat bubble display, see who is talking about what in a more natural fashion.",
+  "InternalName": "ChatBubbles",
+  "ApplicableVersion": "any",
+  "DalamudApiLevel": 10,
+  "RepoUrl": "https://github.com/Haplo064/ChatBubbles",
+  "IconUrl": "https://raw.githubusercontent.com/Haplo064/ChatBubbles/main/ChatBubbles/images/icon.png",
+  "ImageUrls": [ "https://raw.githubusercontent.com/Haplo064/ChatBubbles/main/ChatBubbles/images/image1.png", "https://raw.githubusercontent.com/Haplo064/ChatBubbles/main/ChatBubbles/images/image2.png" ],
+  "Tags": [
+    "UI",
+    "Roleplay",
+    "RP",
+    "Bubbles",
+    "Chat"
+  ]
 }

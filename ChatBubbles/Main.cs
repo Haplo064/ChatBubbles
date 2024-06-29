@@ -20,6 +20,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Framework = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework;
 using Num = System.Numerics;
 using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Interface.Windowing;
 
 namespace ChatBubbles
 {
@@ -47,6 +48,7 @@ namespace ChatBubbles
         private int _queue;
         private int _bubbleFunctionality;
         private bool _hide;
+        private bool _assBubbles;
         private bool _friendsOnly;
         private bool _fcOnly;
         private bool _partyOnly;
@@ -54,6 +56,7 @@ namespace ChatBubbles
         private readonly List<Vector4> _bubbleColours;
         private readonly List<Vector4> _bubbleColours2;
         private float _defaultScale;
+        private float _positionY;
         private bool _switch;
         private float _bubbleSize;
         private readonly bool _selfLock;
@@ -137,9 +140,9 @@ namespace ChatBubbles
         
         public ChatBubbles(DalamudPluginInterface pluginInt)
         {
-            pluginInt.Create<Svc>();
+            pluginInt.Create<Services>();
  
-            _configuration = Svc.pluginInterface.GetPluginConfig() as Config ?? new Config();
+            _configuration = Services.PluginInterface.GetPluginConfig() as Config ?? new Config();
             _timer = _configuration.Timer;
             _channels = _configuration.Channels;
             _textColour = _configuration.TextColour;
@@ -155,6 +158,7 @@ namespace ChatBubbles
             _bubbleSize = _configuration.BubbleSize;
             _selfLock = _configuration.SelfLock;
             _defaultScale = _configuration.DefaultScale;
+            //Need to check height for true ass time
             _switch = _configuration.Switch;
             _yalmCap = _configuration.YalmCap;
 
@@ -187,7 +191,7 @@ namespace ChatBubbles
             while (_bubbleColours.Count < 41) _bubbleColours.Add(new Vector4(1,1,1,0));
             while (_bubbleColours2.Count < 41) _bubbleColours2.Add(new Vector4(0,0,0,0));
             
-            var list = new List<UIColor>(Svc.dataManager.Excel.GetSheet<UIColor>()!.Distinct(new UiColorComparer()));
+            var list = new List<UIColor>(Services.DataManager.Excel.GetSheet<UIColor>()!.Distinct(new UiColorComparer()));
             list.Sort((a, b) =>
             {
                 var colorA = ConvertUIColorToColor(a);
@@ -207,37 +211,39 @@ namespace ChatBubbles
             _uiColours = list;
 
 
-            Svc.framework.Update += OnceUponAFrame;
-            Svc.chatGui.ChatMessage += Chat_OnChatMessage;
-            Svc.pluginInterface.UiBuilder.Draw += BubbleConfigUi;
-            Svc.pluginInterface.UiBuilder.OpenConfigUi += BubbleConfig;
-            Svc.commandManager.AddHandler("/bub", new CommandInfo(Command)
+            
+
+            Services.Framework.Update += OnceUponAFrame;
+            Services.ChatGui.ChatMessage += Chat_OnChatMessage;
+            Services.PluginInterface.UiBuilder.Draw += BubbleConfigUi;
+            Services.PluginInterface.UiBuilder.OpenConfigUi += BubbleConfig;
+            Services.CommandManager.AddHandler("/bub", new CommandInfo(Command)
             {
                 HelpMessage = "Opens the Chat Bubble config menu"
             });
             
-            var updateBubblePtr = Svc.sigScannerD.ScanText("48 85 D2 0F 84 ?? ?? ?? ?? 48 89 5C 24 ?? 57 48 83 EC 20 8B 41 0C");
+            var updateBubblePtr = Services.SigScannerD.ScanText("48 85 D2 0F 84 ?? ?? ?? ?? 48 89 6C 24 ?? 56 48 83 EC 30 8B 41 0C");
             UpdateBubble updateBubbleFunc = UpdateBubbleFuncFunc;
             try
             {
-                _updateBubbleFuncHook = Svc.gameInteropProvider.HookFromAddress<UpdateBubble>(updateBubblePtr + 0x9, updateBubbleFunc);
+                _updateBubbleFuncHook = Services.GameInteropProvider.HookFromAddress<UpdateBubble>(updateBubblePtr + 0x9, updateBubbleFunc);
                 _updateBubbleFuncHook.Enable();
-                Svc.pluginLog.Debug("GOOD");
+                Services.PluginLog.Debug("GOOD");
             }
             catch (Exception e)
-            { Svc.pluginLog.Error("BAD\n" + e); }
+            { Services.PluginLog.Error("BAD\n" + e); }
 
             
-            var openBubblePtr = Svc.sigScannerD.ScanText("E8 ?? ?? ?? ?? C7 43 ?? ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? E8");
+            var openBubblePtr = Services.SigScannerD.ScanText("E8 ?? ?? ?? FF 48 8B 7C 24 48 C7 46 0C 01 00 00 00");
             OpenBubble openBubbleFunc = OpenBubbleFuncFunc;
             try
             {
-                _openBubbleFuncHook = Svc.gameInteropProvider.HookFromAddress<OpenBubble>(openBubblePtr, openBubbleFunc);
+                _openBubbleFuncHook = Services.GameInteropProvider.HookFromAddress<OpenBubble>(openBubblePtr, openBubbleFunc);
                 _openBubbleFuncHook.Enable();
-                Svc.pluginLog.Debug("GOOD2");
+                Services.PluginLog.Debug("GOOD2");
             }
             catch (Exception e)
-            { Svc.pluginLog.Error("BAD2\n" + e); }
+            { Services.PluginLog.Error("BAD2\n" + e); }
         }
 
         private Vector4 ConvertUIColorToColor(UIColor uiColor)
@@ -257,6 +263,7 @@ namespace ChatBubbles
             _configuration.Queue = _queue;
             _configuration.BubbleFunctionality = _bubbleFunctionality;
             _configuration.Hide = _hide;
+            _configuration.assBubbles = _assBubbles;
             _configuration.fcOnly = _fcOnly;
             _configuration.friendsOnly = _friendsOnly;
             _configuration.partyOnly = _partyOnly;
@@ -268,7 +275,7 @@ namespace ChatBubbles
             _configuration.DefaultScale = _defaultScale;
             _configuration.Switch = _switch;
             _configuration.YalmCap = _yalmCap;
-            Svc.pluginInterface.SavePluginConfig(_configuration);
+            Services.PluginInterface.SavePluginConfig(_configuration);
         }
 
 
@@ -299,23 +306,23 @@ namespace ChatBubbles
 
         private void cleanBubbles()
         {
-            var log = (AgentScreenLog*)Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentByInternalId(AgentId.ScreenLog);
+            var logBubble = (AgentScreenLog*)Framework.Instance()->GetUIModule()->GetAgentModule()->GetAgentByInternalId(AgentId.ScreenLog);
             var slots = new BalloonSlotState[10];
             for (int k = 0; k < 10; k++)
             {
                 slots[k] = new BalloonSlotState();
             }
             
-            for (ulong j = 0; j < log->BalloonQueue.MySize; j++)
+            for (ulong j = 0; j < logBubble->BalloonQueue.MySize; j++)
             {
-                var balloonInfo = log->BalloonQueue.Get(j);
+                var balloonInfo = logBubble->BalloonQueue.Get(j);
                 slots[balloonInfo.Slot].ID = balloonInfo.BalloonId;
                 slots[balloonInfo.Slot].Active = true;
             }
                     
                     
             var addonPtr = IntPtr.Zero;
-            addonPtr =  Svc.gameGui.GetAddonByName("_MiniTalk",1);
+            addonPtr =  Services.GameGui.GetAddonByName("_MiniTalk",1);
             if (addonPtr != IntPtr.Zero)
             {
                 AtkUnitBase* miniTalk = (AtkUnitBase*) addonPtr;
@@ -347,9 +354,7 @@ namespace ChatBubbles
         
         private IntPtr UpdateBubbleFuncFunc(Balloon* bubble, IntPtr actor, IntPtr dunnoA, IntPtr dunnoB)
         {
-
-            var log =
-                (AgentScreenLog*) Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentByInternalId(
+            var logBubble = (AgentScreenLog*) Framework.Instance()->GetUIModule()->GetAgentModule()->GetAgentByInternalId(
                     AgentId.ScreenLog);
 
             for (int k = 0; k < 10; k++)
@@ -357,11 +362,11 @@ namespace ChatBubbles
                 _slots[k] = new BalloonSlotState();
             }
 
-            if (log != null)
+            if (logBubble != null)
             {
-                for (ulong j = 0; j < log->BalloonQueue.MySize; j++)
+                for (ulong j = 0; j < logBubble->BalloonQueue.MySize; j++)
                 {
-                    var balloonInfo = log->BalloonQueue.Get(j);
+                    var balloonInfo = logBubble->BalloonQueue.Get(j);
 
                     _slots[9 - j].ID = balloonInfo.BalloonId - 1;
                     _slots[9 - j].Active = true;
@@ -376,7 +381,7 @@ namespace ChatBubbles
 
                 foreach (var cd in _charDatas.Where(cd => actorId == cd.ActorId))
                 {
-                    if (bubble->State == BalloonState.Inactive && _switch && !Svc.clientState.IsPvP)
+                    if (bubble->State == BalloonState.Inactive && _switch && !Services.ClientState.IsPvP)
                     {
 
                         //Get the slot that will turn into the bubble
@@ -390,7 +395,7 @@ namespace ChatBubbles
                         _bubbleActiveType[freeSlot] = cd.Type;
 
                         
-                        if (cd.Name == Svc.clientState.LocalPlayer?.Name.TextValue)
+                        if (cd.Name == Services.ClientState.LocalPlayer?.Name.TextValue)
                         {
                             _playerBubble = freeSlot;
                         }
@@ -432,15 +437,16 @@ namespace ChatBubbles
         
         private int GetFreeBubbleSlot()
         {
-            var addonPtr2 =  Svc.gameGui.GetAddonByName("_MiniTalk",1);
+            var addonPtr2 =  Services.GameGui.GetAddonByName("_MiniTalk",1);
             if (addonPtr2 != IntPtr.Zero)
             {
                 for (int i = 0; i < 10; i++)
                 {
-                    if (!_bubblesAtk2[i]->IsVisible)
+                    if (_bubblesAtk2[i]->IsVisible())
                     {
-                        return i;
+                        continue;
                     }
+                    return i;
                 }
                 return -1;
             }
@@ -482,16 +488,26 @@ namespace ChatBubbles
 
         void IDisposable.Dispose()
         {
-            Svc.chatGui.ChatMessage -= Chat_OnChatMessage;
-            Svc.pluginInterface.UiBuilder.Draw -= BubbleConfigUi;
-            Svc.pluginInterface.UiBuilder.OpenConfigUi -= BubbleConfig;
-            Svc.commandManager.RemoveHandler("/bub");
-            _updateBubbleFuncHook.Disable();
-            _openBubbleFuncHook.Disable();
+            Services.ChatGui.ChatMessage -= Chat_OnChatMessage;
+            Services.PluginInterface.UiBuilder.Draw -= BubbleConfigUi;
+            Services.PluginInterface.UiBuilder.OpenConfigUi -= BubbleConfig;
+            Services.CommandManager.RemoveHandler("/bub");
+            _updateBubbleFuncHook.Dispose();
+            _openBubbleFuncHook.Dispose();
             cleanBubbles();
         }
 
-        private void BubbleConfig() => _config = true;
+        private void BubbleConfig()
+        {
+            if(!_config)
+            {
+                _config = true;
+            }
+            else
+            {
+                _config = !_config;
+            }
+        } 
 
 
         // What to do when command is called
@@ -501,7 +517,7 @@ namespace ChatBubbles
             {
                 var chat = new XivChatEntry();
                 chat.Message = "Cleaning Bubbles";
-                Svc.chatGui.Print(chat);
+                Services.ChatGui.Print(chat);
                 cleanBubbles();
             }
             else if (arguments == "toggle")
@@ -513,7 +529,7 @@ namespace ChatBubbles
                 }
                 var chat = new XivChatEntry();
                 chat.Message = $"Toggling Bubbles {tog}";
-                Svc.chatGui.Print(chat);
+                Services.ChatGui.Print(chat);
                 _switch = !_switch;
             }
             else
@@ -525,23 +541,23 @@ namespace ChatBubbles
 
         private uint GetActorId(string nameInput)
         {
-            if (_hide && nameInput == Svc.clientState.LocalPlayer?.Name.TextValue) return 0;
+            if (_hide && nameInput == Services.ClientState.LocalPlayer?.Name.TextValue) return 0;
 
-            foreach (var t in Svc.objectTable)
+            foreach (var t in Services.ObjectTable)
             {
-                if (!(t is PlayerCharacter pc)) continue;
-                if (pc.Name.TextValue == nameInput) return pc.ObjectId;
+                if (!(t is IPlayerCharacter pc)) continue;
+                if (pc.Name.TextValue == nameInput) return pc.EntityId;
             }
             return 0;
         }
 
         private bool IsFriend(string nameInput)
         {
-            if (nameInput == Svc.clientState.LocalPlayer?.Name.TextValue) return true;
+            if (nameInput == Services.ClientState.LocalPlayer?.Name.TextValue) return true;
 
-            foreach (var t in Svc.objectTable)
+            foreach (var t in Services.ObjectTable)
             {
-                if (!(t is PlayerCharacter pc)) continue;
+                if (!(t is IPlayerCharacter pc)) continue;
 
                 if (pc.Name.TextValue == nameInput)
                 {
@@ -553,11 +569,11 @@ namespace ChatBubbles
 
         private bool IsPartyMember(string nameInput)
         {
-            if (nameInput == Svc.clientState.LocalPlayer?.Name.TextValue) return true;
+            if (nameInput == Services.ClientState.LocalPlayer?.Name.TextValue) return true;
 
-            foreach (var t in Svc.objectTable)
+            foreach (var t in Services.ObjectTable)
             {
-                if (!(t is PlayerCharacter pc)) continue;
+                if (!(t is IPlayerCharacter pc)) continue;
                 if (pc.Name.TextValue == nameInput)
                 {
                     return pc.StatusFlags.HasFlag(StatusFlags.PartyMember);
@@ -568,15 +584,15 @@ namespace ChatBubbles
 
         private bool IsFC(string nameInput)
         { 
-            if (nameInput == Svc.clientState.LocalPlayer?.Name.TextValue) return true;
+            if (nameInput == Services.ClientState.LocalPlayer?.Name.TextValue) return true;
 
-			foreach (var t in Svc.objectTable)
+			foreach (var t in Services.ObjectTable)
             { 
-                if (!(t is PlayerCharacter pc)) continue;
+                if (!(t is IPlayerCharacter pc)) continue;
                 if (pc.Name.TextValue == nameInput)
 
                 {
-					return Svc.clientState.LocalPlayer?.CompanyTag.TextValue == pc.CompanyTag.TextValue;
+					return Services.ClientState.LocalPlayer?.CompanyTag.TextValue == pc.CompanyTag.TextValue;
                 }
             }
             return false;
@@ -584,18 +600,17 @@ namespace ChatBubbles
 
         private int GetActorDistance(string name)
         {
-            if (name == Svc.clientState.LocalPlayer?.Name.TextValue) return 0;
+            if (name == Services.ClientState.LocalPlayer?.Name.TextValue) return 0;
 
-            foreach (var t in Svc.objectTable)
+            foreach (var t in Services.ObjectTable)
             {
-                if (!(t is PlayerCharacter pc)) continue;
+                if (!(t is IPlayerCharacter pc)) continue;
                 if (pc.Name.TextValue == name)
                 {
                     return (int)Math.Sqrt( Math.Pow(pc.YalmDistanceX, 2) + Math.Pow(pc.YalmDistanceZ, 2));
                 }
             }
-            return 0;
-            
+            return 0;            
             
         }
         
@@ -640,6 +655,7 @@ namespace ChatBubbles
         public float DefaultScale { get; set; } = 1f;
         public bool Switch { get; set; } = true;
         public int YalmCap { get; set; } = 99;
+        public bool assBubbles { get; set; } = false;
 
         public UiColorPick[] TextColour { get; set; } =
         {
@@ -668,16 +684,16 @@ namespace ChatBubbles
     [StructLayout(LayoutKind.Explicit, Size = 0x468)]
     public unsafe struct AddonMiniTalk
     {
-        [FieldOffset(0x238)] public AtkResNode* ChatBubble0;
-        [FieldOffset(0x270)] public AtkResNode* ChatBubble1;
-        [FieldOffset(0x2A8)] public AtkResNode* ChatBubble2;
-        [FieldOffset(0x2E0)] public AtkResNode* ChatBubble3;
-        [FieldOffset(0x318)] public AtkResNode* ChatBubble4;
-        [FieldOffset(0x350)] public AtkResNode* ChatBubble5;
-        [FieldOffset(0x388)] public AtkResNode* ChatBubble6;
-        [FieldOffset(0x3C0)] public AtkResNode* ChatBubble7;
-        [FieldOffset(0x3F8)] public AtkResNode* ChatBubble8;
-        [FieldOffset(0x430)] public AtkResNode* ChatBubble9;
+        [FieldOffset(0x248)] public AtkResNode* ChatBubble0;
+        [FieldOffset(0x280)] public AtkResNode* ChatBubble1;
+        [FieldOffset(0x2B8)] public AtkResNode* ChatBubble2;
+        [FieldOffset(0x2F0)] public AtkResNode* ChatBubble3;
+        [FieldOffset(0x328)] public AtkResNode* ChatBubble4;
+        [FieldOffset(0x360)] public AtkResNode* ChatBubble5;
+        [FieldOffset(0x398)] public AtkResNode* ChatBubble6;
+        [FieldOffset(0x3D0)] public AtkResNode* ChatBubble7;
+        [FieldOffset(0x408)] public AtkResNode* ChatBubble8;
+        [FieldOffset(0x440)] public AtkResNode* ChatBubble9;
     }
 }
 
