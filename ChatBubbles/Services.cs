@@ -10,7 +10,7 @@ namespace ChatBubbles
     {
 		#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 	    [PluginService] static internal IGameInteropProvider GameInteropProvider { get; private set; }
-        [PluginService] static internal DalamudPluginInterface PluginInterface { get; private set; }
+        [PluginService] static internal IDalamudPluginInterface PluginInterface { get; private set; }
 		[PluginService] static internal IBuddyList BuddyList { get; private set; }
 		[PluginService] static internal IPluginLog PluginLog { get; private set; }
 		[PluginService] static internal IChatGui ChatGui { get; private set; }

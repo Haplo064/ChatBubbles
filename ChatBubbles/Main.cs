@@ -138,7 +138,7 @@ namespace ChatBubbles
         private delegate IntPtr OpenBubble(IntPtr self, IntPtr actor, IntPtr textPtr, bool notSure);
         private readonly Hook<OpenBubble> _openBubbleFuncHook;
         
-        public ChatBubbles(DalamudPluginInterface pluginInt)
+        public ChatBubbles(IDalamudPluginInterface pluginInt)
         {
             pluginInt.Create<Services>();
  
