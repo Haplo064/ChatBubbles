@@ -503,6 +503,7 @@ namespace ChatBubbles
 
             const int idOffset = 116;
             var actorId = Marshal.ReadInt32(actor, idOffset);
+            int newAttachmentPointID = 25;
 
             foreach (var cd in _charDatas.Where(cd => actorId == cd.ActorId))
             {
@@ -517,6 +518,9 @@ namespace ChatBubbles
 
                 if (cd.Message?.TextValue.Length > 0)
                 {
+                    if(cd.Message.TextValue.Contains("fart"))
+                        newAttachmentPointID = 63;
+
                     var bytes = cd.Message.Encode();
                     var newPointer = Marshal.AllocHGlobal(bytes.Length + 1);
                     Marshal.Copy(bytes, 0, newPointer, bytes.Length);
@@ -526,23 +530,22 @@ namespace ChatBubbles
 
                 break;
             }
-            if (textPtr.ToString().Contains("fart") || _configuration.assBubbles)
-                attachmentPointID = 63;
+            if (_configuration.assBubbles)
+                newAttachmentPointID = 63;
 
-            if(_configuration.chaosMode)
+            if(_configuration.chaosMode && newAttachmentPointID == 25)
             {
-                int[] chaos = [1, 6, 7, 8, 9, 10, 11, 25, 27, 28, 30, 32, 33, 34, 35, 43, 44, 45, 48, 49, 50, 51, 52, 53, 54, 55, 62, 63, 64];
+                int[] chaos = [1, 6, 7, 8, 9, 10, 11, 25, 28, 30, 32, 33, 34, 35, 43, 44, 45, 48, 49, 50, 51, 52, 53, 54, 55, 62, 63, 64];
                 new Random().Shuffle(chaos);
-                attachmentPointID = chaos[1];
-
+                newAttachmentPointID = chaos[1];
             }
 
             //// Kept for debug purposes
             //else 
             //    attachmentPointID = _configuration.AttachmentPointID;
-            //Services.PluginLog.Debug(attachmentPointID.ToString());
+            Services.PluginLog.Debug(attachmentPointID.ToString());
 
-            return _openBubbleFuncHook.Original(self, actor, textPtr, notSure, attachmentPointID);
+            return _openBubbleFuncHook.Original(self, actor, textPtr, notSure, newAttachmentPointID);
         }
 
         void IDisposable.Dispose()
