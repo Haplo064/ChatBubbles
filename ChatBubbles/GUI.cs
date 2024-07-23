@@ -31,12 +31,12 @@ namespace ChatBubbles
                 {
                     ImGui.SetTooltip("Hides your own character's bubbles.");
                 }
-                //ImGui.SameLine();
-                //ImGui.Checkbox("Ass Bubbles", ref _assBubbles);
-                //if (ImGui.IsItemHovered())
-                //{
-                //    ImGui.SetTooltip("Oh no, ass bubbles are back!");
-                //}
+                ImGui.SameLine();
+                ImGui.Checkbox("Chaos Mode", ref _chaosMode);
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip("What would this even do?");
+                }
                 ImGui.Checkbox("Display friends only", ref _friendsOnly);
                 if (ImGui.IsItemHovered())
                 {
@@ -64,6 +64,13 @@ namespace ChatBubbles
                 if (_debug)
                 {
                     ImGui.Text("DEBUG Info");
+
+                    //ImGui.InputInt("AP", ref _attachmentPointID);
+                    //if (ImGui.IsItemHovered())
+                    //{
+                    //    ImGui.SetTooltip("Attachment point ID.");
+                    //}
+                    //ImGui.Text($"Player's AP: {_attachmentPointID}");
                     ImGui.Text($"Player's bubble's position: {_playerBubbleX}");
                     try
                     {

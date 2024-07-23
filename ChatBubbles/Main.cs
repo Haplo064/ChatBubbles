@@ -49,6 +49,7 @@ namespace ChatBubbles
         private int _bubbleFunctionality;
         private bool _hide;
         private bool _assBubbles;
+        private bool _chaosMode;
         private bool _friendsOnly;
         private bool _fcOnly;
         private bool _partyOnly;
@@ -191,7 +192,8 @@ namespace ChatBubbles
             _bubbleSize = _configuration.BubbleSize;
             _selfLock = _configuration.SelfLock;
             _defaultScale = _configuration.DefaultScale;
-            //Need to check height for true ass time
+            _assBubbles = _configuration.assBubbles;
+            _chaosMode = _configuration.chaosMode;
             _switch = _configuration.Switch;
             _yalmCap = _configuration.YalmCap;
             _attachmentPointID = _configuration.AttachmentPointID;
@@ -298,6 +300,7 @@ namespace ChatBubbles
             _configuration.BubbleFunctionality = _bubbleFunctionality;
             _configuration.Hide = _hide;
             _configuration.assBubbles = _assBubbles;
+            _configuration.chaosMode = _chaosMode;
             _configuration.fcOnly = _fcOnly;
             _configuration.friendsOnly = _friendsOnly;
             _configuration.partyOnly = _partyOnly;
@@ -526,11 +529,18 @@ namespace ChatBubbles
             if (textPtr.ToString().Contains("fart") || _configuration.assBubbles)
                 attachmentPointID = 63;
 
+            if(_configuration.chaosMode)
+            {
+                int[] chaos = [1, 6, 7, 8, 9, 10, 11, 25, 27, 28, 30, 32, 33, 34, 35, 43, 44, 45, 48, 49, 50, 51, 52, 53, 54, 55, 62, 63, 64];
+                new Random().Shuffle(chaos);
+                attachmentPointID = chaos[1];
+
+            }
 
             //// Kept for debug purposes
             //else 
             //    attachmentPointID = _configuration.AttachmentPointID;
-
+            //Services.PluginLog.Debug(attachmentPointID.ToString());
 
             return _openBubbleFuncHook.Original(self, actor, textPtr, notSure, attachmentPointID);
         }
@@ -706,6 +716,7 @@ namespace ChatBubbles
         public int YalmCap { get; set; } = 99;
         public int AttachmentPointID { get; set; } = 0;
         public bool assBubbles { get; set; } = false;
+        public bool chaosMode { get; set; } = false;
 
         public UiColorPick[] TextColour { get; set; } =
         {
