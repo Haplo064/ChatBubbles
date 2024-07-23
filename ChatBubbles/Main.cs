@@ -543,7 +543,7 @@ namespace ChatBubbles
             //// Kept for debug purposes
             //else 
             //    attachmentPointID = _configuration.AttachmentPointID;
-            Services.PluginLog.Debug(attachmentPointID.ToString());
+            //Services.PluginLog.Debug(attachmentPointID.ToString());
 
             return _openBubbleFuncHook.Original(self, actor, textPtr, notSure, newAttachmentPointID);
         }
