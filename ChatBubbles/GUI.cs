@@ -247,9 +247,7 @@ namespace ChatBubbles
                     }
                     i++;
                 }
-
-
-                
+                                
 
                 ImGui.Columns(1);
 
