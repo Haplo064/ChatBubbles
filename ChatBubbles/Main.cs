@@ -10,7 +10,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Logging;
-using Lumina.Excel.GeneratedSheets;
 using ImGuiNET;
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -21,14 +20,15 @@ using Framework = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework;
 using Num = System.Numerics;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.Windowing;
+using Lumina.Excel.Sheets;
 
 namespace ChatBubbles
 {
     internal class UiColorComparer : IEqualityComparer<UIColor>
     {
-        public bool Equals(UIColor? x, UIColor? y)
+        public bool Equals(UIColor x, UIColor y)
         {
-            return x?.UIForeground == y?.UIForeground; // based on variable i
+            return x.UIForeground == y.UIForeground; // based on variable i
         }
         public int GetHashCode(UIColor obj)
         {
@@ -745,19 +745,19 @@ namespace ChatBubbles
         public int Queue { get; set; } = 3;
     }
     
-    [StructLayout(LayoutKind.Explicit, Size = 0x468)]
+    [StructLayout(LayoutKind.Explicit, Size = 0x498)]
     public unsafe struct AddonMiniTalk
     {
-        [FieldOffset(0x248)] public AtkResNode* ChatBubble0;
-        [FieldOffset(0x280)] public AtkResNode* ChatBubble1;
-        [FieldOffset(0x2B8)] public AtkResNode* ChatBubble2;
-        [FieldOffset(0x2F0)] public AtkResNode* ChatBubble3;
-        [FieldOffset(0x328)] public AtkResNode* ChatBubble4;
-        [FieldOffset(0x360)] public AtkResNode* ChatBubble5;
-        [FieldOffset(0x398)] public AtkResNode* ChatBubble6;
-        [FieldOffset(0x3D0)] public AtkResNode* ChatBubble7;
-        [FieldOffset(0x408)] public AtkResNode* ChatBubble8;
-        [FieldOffset(0x440)] public AtkResNode* ChatBubble9;
+        [FieldOffset(0x250)] public AtkResNode* ChatBubble0;
+        [FieldOffset(0x288)] public AtkResNode* ChatBubble1;
+        [FieldOffset(0x2C0)] public AtkResNode* ChatBubble2;
+        [FieldOffset(0x2F8)] public AtkResNode* ChatBubble3;
+        [FieldOffset(0x330)] public AtkResNode* ChatBubble4;
+        [FieldOffset(0x368)] public AtkResNode* ChatBubble5;
+        [FieldOffset(0x3A0)] public AtkResNode* ChatBubble6;
+        [FieldOffset(0x3D8)] public AtkResNode* ChatBubble7;
+        [FieldOffset(0x410)] public AtkResNode* ChatBubble8;
+        [FieldOffset(0x448)] public AtkResNode* ChatBubble9;
     }
 }
 

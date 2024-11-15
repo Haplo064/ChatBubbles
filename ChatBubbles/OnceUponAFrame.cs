@@ -3,13 +3,14 @@ using Dalamud.Plugin;
 using System;
 using Dalamud.Logging;
 using Num = System.Numerics;
+using Dalamud.Plugin.Services;
 
 namespace ChatBubbles
 {
     public unsafe partial class ChatBubbles : IDalamudPlugin
     {
 
-        private void OnceUponAFrame(object _)
+        private void OnceUponAFrame(IFramework framework)
         {
             try
             {
@@ -192,7 +193,7 @@ namespace ChatBubbles
             }
             catch (Exception e)
             {
-                Services.PluginLog.Error($"Error before updating frame: {e}");
+                Services.PluginLog.Error($"Error while populating the bubbles: {e}");
             }
             
             //Cleaning charDatas

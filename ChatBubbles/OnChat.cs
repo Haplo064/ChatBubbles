@@ -42,7 +42,7 @@ namespace ChatBubbles
 
             if (sanitized == Services.ClientState.LocalPlayer?.Name.TextValue)
             {
-                playerPayload = new PlayerPayload(Services.ClientState.LocalPlayer.Name.TextValue, Services.ClientState.LocalPlayer.HomeWorld.Id);
+                playerPayload = new PlayerPayload(Services.ClientState.LocalPlayer.Name.TextValue, Services.ClientState.LocalPlayer.HomeWorld.Value.Region);
                 if (type == XivChatType.CustomEmote)
                 {
                     var playerName = new SeString(new List<Payload>());
