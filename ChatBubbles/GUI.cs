@@ -308,14 +308,14 @@ namespace ChatBubbles
                 ImGui.Columns(10, "##columnsID", false);
                 foreach (var z in _uiColours)
                 {
-                    var temp = BitConverter.GetBytes(z.UIForeground);
+                    var temp = BitConverter.GetBytes(z.Dark);
                     if (ImGui.ColorButton(z.RowId.ToString(), new Num.Vector4(
                         (float) temp[3] / 255,
                         (float) temp[2] / 255,
                         (float) temp[1] / 255,
                         (float) temp[0] / 255)))
                     {
-                        _chooser.Choice = z.UIForeground;
+                        _chooser.Choice = z.Dark;
                         _chooser.Option = z.RowId;
                         _picker = false;
                     }

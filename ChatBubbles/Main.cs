@@ -28,11 +28,11 @@ namespace ChatBubbles
     {
         public bool Equals(UIColor x, UIColor y)
         {
-            return x.UIForeground == y.UIForeground; // based on variable i
+            return x.Dark == y.Dark; // based on variable i
         }
         public int GetHashCode(UIColor obj)
         {
-            return obj.UIForeground.GetHashCode(); // hashcode of variable to compare
+            return obj.Dark.GetHashCode(); // hashcode of variable to compare
         }
     }
 
@@ -227,7 +227,7 @@ namespace ChatBubbles
             while (_bubbleColours.Count < 41) _bubbleColours.Add(new Vector4(1,1,1,0));
             while (_bubbleColours2.Count < 41) _bubbleColours2.Add(new Vector4(0,0,0,0));
             
-            var list = new List<UIColor>(Services.DataManager.Excel.GetSheet<UIColor>()!.Distinct(new UiColorComparer()));
+            var list = new List<UIColor>(Services.DataManager.Excel.GetSheet<UIColor>()!.Distinct());
             list.Sort((a, b) =>
             {
                 var colorA = ConvertUIColorToColor(a);
@@ -284,7 +284,7 @@ namespace ChatBubbles
 
         private Vector4 ConvertUIColorToColor(UIColor uiColor)
         {
-            var temp = BitConverter.GetBytes(uiColor.UIForeground);
+            var temp = BitConverter.GetBytes(uiColor.Dark);
             return new Vector4((float)temp[3] / 255,
                 (float)temp[2] / 255,
                 (float)temp[1] / 255,
@@ -352,9 +352,9 @@ namespace ChatBubbles
             }
             
             for (ulong j = 0; j < logBubble->BalloonQueue.MySize; j++)
-            {
-                var balloonInfo = logBubble->BalloonQueue.Get(j);
-                slots[balloonInfo.Slot].ID = balloonInfo.BalloonId;
+			{
+				var balloonInfo = logBubble->BalloonQueue[(long)j];
+				slots[balloonInfo.Slot].ID = balloonInfo.BalloonId;
                 slots[balloonInfo.Slot].Active = true;
             }
                     
@@ -404,7 +404,7 @@ namespace ChatBubbles
             {
                 for (ulong j = 0; j < logBubble->BalloonQueue.MySize; j++)
                 {
-                    var balloonInfo = logBubble->BalloonQueue.Get(j);
+                    var balloonInfo = logBubble->BalloonQueue[(long)j];
 
                     _slots[9 - j].ID = balloonInfo.BalloonId - 1;
                     _slots[9 - j].Active = true;
